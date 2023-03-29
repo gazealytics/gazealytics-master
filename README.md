@@ -1,1 +1,2 @@
-# gazealytics-master
+# Gazealytics: A Unified and Flexible Visual Toolkit for Exploratory and Comparative Gaze Analysis
+Gazealytics is a visual eye tracking analytics toolkits that aim to help eye tracking domain experts to interactively explore eye tracking data, to gain an overview/insights of detail (individual) or overview (group/summary) patterns and behaviors through a set of AOI-oriented visual metrics and comparative tools across participants, AOIs, and time window of interest. It also allows to export the AOIs, analysis results with metrics for post-analysis or reporting purposes.
