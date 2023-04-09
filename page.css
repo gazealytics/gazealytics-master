@@ -1,0 +1,312 @@
+
+.tool {
+  position: relative;
+  display: inline-block;
+  width: inherit;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+}
+.tool2 {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+}
+
+.inner_button {
+	float:right;
+	padding-left: 3px;
+}
+
+.data_pane_button {
+	float:right;
+}
+button {
+	padding: 1px 2px;
+	font-family: Arial, sans-serif;
+}
+.text_pattern {
+	padding-top: 5px;
+	padding-bottom: 5px;
+}
+.tool .tip, .tool2 .tip {
+	width: auto;
+	top: 100%;
+	left: 50%;
+	margin-top: 10%;
+	margin-left: -50%;
+	visibility: hidden;
+	background-color: black;
+	color: #fff;
+	text-align: center;
+	border-radius: 5px;
+	padding: 3px 6px;
+	position: absolute;
+	z-index: 2;
+}
+
+.interface_layout {
+	margin: 0;
+	display: grid;
+	grid-template-columns: 32% 0.5% 67%;
+	width: 88%;
+	overflow-x: hidden;
+	overflow-y: hidden;
+	height: 70%;
+	max-width:fit-content;
+}
+.data_box {
+	overflow-x: hidden;
+	overflow-y: hidden;
+	white-space: normal;
+	margin: 0px;
+	width: 100%;
+	height: 900px;
+	display: grid;
+	grid-template-rows: 50% 43%;
+}
+.data_top {
+	width: 100%;
+	height: 100%;
+}
+.canvas_box {
+	overflow: overlay;
+	overflow-y: hidden;
+	white-space: nowrap;	
+}
+.control_box{
+	height: 95%; /* Full-height: remove this if you want "auto" height */
+	overflow-y: auto;
+	width: 12%; /* Set the width of the sidebar */
+	position: fixed; /* Fixed Sidebar (stay in place on scroll) */
+	right: 0;
+	z-index: 1; /* Stay on top */
+	top: 0; /* Stay at the top */
+	overflow-x: hidden; /* Disable horizontal scroll */
+	padding-top: 20px;
+	padding-right: 5px; padding-left: 5px;
+	background-color: LightBlue;
+
+}
+.tabbut{
+	padding: 10px;
+	padding-top: 5px;
+	padding-bottom: 5px;
+	border: none;
+	background-color: #EEE;
+	display: inline-block;
+	width: auto;
+	height: 20px;
+	white-space: normal;
+	font-family: Arial, sans-serif;
+}
+.data_content{
+	padding-top: 20px;
+	margin-left: 5%;
+	margin-right: 3%;
+	background-color: #CCC;
+	display: none;
+	height: 78%;
+	overflow-y: hidden;
+	font-family: Arial, sans-serif;
+	font-size: 14px;
+}
+.tabbut2{
+	padding: 4px;
+	margin: 4px;
+	border: none;
+	background-color: #EEE;
+	font-family: Arial, sans-serif;
+}
+.active, .collapser:hover {
+  background-color: #ccc;
+}
+.collapsing {
+  padding: 0px;
+  display: none;
+  overflow: visible;
+  white-space: normal;
+}
+button {
+	font-weight: bold;
+}
+.toggler {
+	color: black;
+}
+.toggle-on{
+	color: green;
+	transition: 0.5s;
+}
+.data_list {
+	list-style-type:none;
+	padding: auto;
+	margin: 0;
+	height: 85%;
+	overflow-y: auto;
+}
+.lens_item{
+	display: grid;
+	grid-template-columns: 15px 220px;
+	width: 260px;
+	height: auto;
+	border-width: 1px;
+	margin-bottom: 3px;
+}
+.note_item{
+	display: grid;
+	grid-template-columns: 15px 220px;
+	width: 236px;
+	height: auto;
+	border-width: 1px;
+	margin-bottom: 3px;
+}
+.note_dataset {
+	width : 150px;
+}
+.selected{
+	border-style: dashed;
+	border-color: green;
+}
+.data_item{
+	border-width: 1px;
+	display: grid;
+	grid-template-columns: 15px 310px;
+	width: 325px;
+	height: auto;
+}
+.data_dragger{
+	border-width: 3px;
+	background-color: DarkGray;
+	width: 17px;
+}
+.dragger{
+	border-width: 3px;
+	background-color: DarkGray;
+	width: 20px;
+}
+.colorer{
+	width: 30px;
+	padding-left: 0px; padding-right: 0px;
+}
+.num{
+	width: 70px;
+}
+.num2{
+	width: 70px;
+}
+.imbutton{
+	height:60px;
+	width:85px;
+	border-width: 1px;
+}
+.dat_list {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+	height: auto;
+	padding-bottom: 10px;
+}
+.dat_list li {
+	border-width: 1px;
+	border-color: #dddddd;
+	border-style: dashed;
+	margin: 2px;
+	padding: auto;
+	float: left;
+	min-width: 25px;
+	height: 25px;
+}	
+.dat_list .toi_selected {
+	background-color: #dddddd;
+	border-width: 1px;
+	border-style: dashed;
+	border-color: green;
+	
+}
+.toi_list {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+	height: auto;
+	padding-bottom: 10px;
+}
+.toi_list li {
+	border-width: 1px;
+	border-color: #dddddd;
+	border-style: dashed;
+	margin: 2px;
+	padding: auto;
+	float: left;
+	min-width: 25px;
+	height: 25px;
+}	
+.toi_list .toi_selected {
+	background-color: #dddddd;
+	border-width: 1px;
+	border-style: dashed;
+	border-color: green;
+	
+}
+.timebox {
+	margin: 0;
+	display: grid;
+	grid-template-columns: 75px 125px 75px;
+	gap: 15px;
+	float: center;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+.rowsplit{display:grid;}
+.timebox input { margin: 0; text-align:left; font-size: 11; }
+.timeslider {float: center; }
+
+.slider {width:90%; float: center; }
+.hidden {display: none;}
+
+table, th, td {
+	font-weight: 400;
+	text-align: left;
+}
+
+.dynamic_legend{
+	font-family: Arial, sans-serif;
+	font-size: 14px;
+}
+
+/* matrix arrangement css */
+.greyed_out {
+	color: gray;
+}
+.matrix_wrapper {
+	width: 96%; 
+}
+.matrix_top {
+	width: 100%; 
+	text-align: center;		
+}
+.matrix_left_dot {
+	width: 6%; height: 6%; float: left;
+    -webkit-transform: rotate(270deg); /* Safari and Chrome */
+    -moz-transform: rotate(270deg);   /* Firefox */
+    -ms-transform: rotate(270deg);   /* IE 9 */
+    -o-transform: rotate(270deg);   /* Opera */
+    transform: rotate(270deg);
+}
+.matrix_left {
+	height: 100%;
+    margin-left: -700%;
+    text-align: center;
+}
+.matrix_center {
+	width: 94%; 
+	height: 86%; 
+	float: right; 
+	padding-top:0px; 
+}
+.matsel {
+	display: none;
+}
+.matsel_shown {
+	display: inline;
+}

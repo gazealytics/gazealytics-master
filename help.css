@@ -1,0 +1,36 @@
+html{
+    max-width: 800px;
+    width: 85%;
+    margin: 0 auto;
+    padding: 25px 0;
+  }
+
+h2 {
+    font-size: 25px;
+    line-height: 1;
+    text-align: center;
+  }
+
+.header {
+  background: #2F3061;
+  color: #F7FFF7;
+}
+
+h3 {
+  font-size: 18px;
+  line-height: 1;
+  padding-left: 15px;
+}
+
+h4 {
+  font-size: 15px;
+  line-height: 1;
+  padding-left: 15px;
+}
+
+.div_class{
+  background: #F6FA9E;
+  color: #343434;
+  font-family: serif;
+  padding: 10px;
+}

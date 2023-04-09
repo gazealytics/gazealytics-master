@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<link rel="stylesheet" href="nouislider.css">
+<link rel="stylesheet" href="css/all.css">
+<link rel="stylesheet" href="page.css">
+<style id="tooltip" >
+.tool:hover .tip {visibility: visible;}
+.tool2:hover .tip {visibility: visible;}
+
+</style>
+<style id="dynamic_stylesheet" ></style>
+
+<script type="text/javascript" src="p5.min.js"></script>
+<script type="text/javascript" src="reorder.min.js"></script>
+<script type="text/javascript" src="nouislider.js"></script>
+<script type="text/javascript" src="jszip.min.js"></script>
+<script type="text/javascript" src="FileSaver.min.js"></script>
+
+<script type="text/javascript" src="colours.js"></script>
+<script type="text/javascript" src="page.js"></script>
+<script type="text/javascript" src="data.js"></script>
+<script type="text/javascript" src="lenses.js"></script>
+<script type="text/javascript" src="notes.js"></script>
+<script type="text/javascript" src="metrics.js"></script>
+<script type="text/javascript" src="topographic.js"></script>
+<script type="text/javascript" src="storing.js"></script>
+<script type="text/javascript" src="zipping.js"></script>
+<script type="text/javascript" src="spatial.js"></script>
+<script type="text/javascript" src="timeline.js"></script>
+<script type="text/javascript" src="matrix.js"></script>
+<script type="text/javascript" src="app.js"></script>
+
+<body>
+	<div class="control_box" onmouseenter="reset_legend_mouseovers()">	
+	
+
+		<button type="button" class="tabbut2" id="tab0" style='background-color:lightblue' onclick='collapse(0)'> Overview </button>
+		<button type="button" class="tabbut2" id="tab1" onclick='collapse(1)'> Fixation </button>
+		<div class="tool" style='display: inline'><button href="help.html" target="popup" onclick="window.open('help.html#overview','name','width=600,height=400')"><i class="far fa-question-circle"></i></button><span class="tip">Opens help page</span></div>
+		<button type="button" class="tabbut2" id="tab2" onclick='collapse(2)'> Saccades </button>
+		<button type="button" class="tabbut2" id="tab3" onclick='collapse(3)'> Timeline </button>
+		<hr >
+		<div class="collapsing" id='part0' style='display: block'>
+			<div class="tool"><button id='save_button' onclick="save_zip()">Save Project</button><span class="tip">Save the current project to a .zip file. This can take some time</span></div>
+			<input id="state_f" type="file" name="name" style="display: none;" onchange="load_zip()"/>
+			<div class="tool"><button id="load_button" onclick=click_loadfile()>Load Project</button><span class="tip">Load a zipped project</span></div><br>
+			<div id="project_txt"></div>
+			<br>
+			<input id="im_f" type="file" name="name" style="display: none;" onchange="load_image()"/>
+			<div class="tool2"><button onclick="document.getElementById('im_f').click()">Load Background</button><span class="tip">Load a context background image</span></div><br >
+			<div class="tool2"><div class="text_pattern">Background Brightness: </div><div id="back_sl" class="slider"></div><span class="tip">Controls Brightness of the background image</span></div><br >
+			<script>noUiSlider.create(document.getElementById('back_sl'),{ start:[0.5], step:0.001, range:{'min':0.01, 'max':0.99} });</script>
+			<div class="tool2"><div class="text_pattern">Max Cluster Distance:</div> <div id="maxdist_val" style="display:inline-block; padding-bottom:5px">130 pixels</div> <div id="maxdist_sl" class="slider"></div><span class="tip">Controls how far apart consecutive eye-tracking points can be and still be clustered together. Points seperated by a row with coordinates at zero or empty strings will not be clustered.</span></div><br >
+			<script>noUiSlider.create(document.getElementById('maxdist_sl'),{ start:[130], step:0.1, range:{'min':0.0, 'max':200} });</script>
+			<div class="tool2"><div class="text_pattern">Min Fixation Time: </div><div id="mintime_val" style="display:inline-block; padding-bottom:5px">80.0 ms</div> <div id="mintime_sl" class="slider"></div><span class="tip">Controls how long a cluster must last to be considered a fixation</span></div><br >
+			<script>noUiSlider.create(document.getElementById('mintime_sl'),{ start:[80.0], step:0.1, range:{'min':0.0, 'max':300} });</script>
+			<br>
+			<div class="tool"><button type="button" id="refresh_clustering" class="toggler" onclick="rebuild_clustering();background_changed=true;"> Refresh Clustering </button><span class="tip">Recomputes the clustering for the raw data, e.g. if the clustering controls are changed</span></div>
+			<br><br>
+			<div class="tool">
+			<table>
+			<tr><th>scale:</th>
+			<th><input type="number" class="num2" id='SCALE_X'  step=0.01 value=1.00 onchange="SCALE_X=this.value;rebuild_clustering();background_changed=true;"></th>
+			<th><input type="number" class="num2" id='SCALE_Y'  step=0.01 value=1.00 onchange="SCALE_Y=this.value;rebuild_clustering();background_changed=true;"></th><tr>
+			<tr><th>offset:</th>
+			<th><input type="number" class="num2" id='offset_xdata'  step=10 value=0 onchange="offset_xdata=this.value;data_resize()"></th>
+			<th><input type="number" class="num2" id='offset_ydata'  step=10 value=0 onchange="offset_ydata=this.value;data_resize()"></th></tr>
+			</table>
+			<span class="tip">Controls the scale of the data and the coordinates of the top-left corner of the data (offset) in relation to the spatial canvas</span></div><br >
+			<br>
+			<div class="tool"><button type="button" id="control_crop" class="toggler" onclick="control_state('crop');"> Crop <i class="far fa-edit"></i> </button> <span class="tip">Allows for cropping the spatial screen by selecting an AOI or dragging a rectangle</span></div>
+			<div class="tool"><button type="button" id="undo_crop" onclick="undo_crop();"> Undo </button> <span class="tip">Undoes the previous crop action</span></div>
+			<div class="tool"><button type="button" id="reload_background" class="toggler" onclick="image_changed=true;reset_crop();"> Reset </button> <span class="tip">Reset the spatial screen to the size of the background image, if one has been loaded</span></div>
+			<div class="tool" style='display:inline'><button href="help.html" target="popup" onclick="window.open('help.html#cropping','name','width=600,height=400')"><i class="far fa-question-circle"></i></button><span class="tip">Opens help page</span></div>
+			<div class="tool">
+			<br>
+			<table>
+			<tr><th>from:</th>
+			<th><input type="number" class="num2" id='OFFSET_X'  step=10 value=0 onchange="crop_resize()"></th>
+			<th><input type="number" class="num2" id='OFFSET_Y'  step=10 value=0 onchange="crop_resize()"></th></tr>
+			<tr><th>span:</th>
+			<th><input type="number" class="num2" id='WIDTH'  step=1 value=0 onchange="crop_resize()"></th>
+			<th><input type="number" class="num2" id='HEIGHT'  step=1 value=0 onchange="crop_resize()"></th><tr></table>
+			<span class="tip">The cropped area for analysis on the canvas starting at the &quot;from&quot; x and y coordinate, continuing for the &quot;span&quot; width and height values which are noted in relation to the data values</span></div><br >
+		</div>
+		<div class="collapsing" id='part1' style='display: none'>
+			<div class="tool"><button type="button" id="fixs" class="toggler toggle-on" onclick="click_fixs();">Fixations: Shown</button><span class="tip">Toggles showing the background fixations. Colour depends on sample group, size is proportional to duration</span></div>
+			<div class="tool" style='display:inline'><button href="help.html" target="popup" onclick="window.open('help.html#fixation','name','width=600,height=400')"><i class="far fa-question-circle"></i></button><span class="tip">Opens help page</span></div>
+			<div id='fix_controls' style="display:block">
+				<br>
+				<div class="tool2">fixation size:<div id="fix_size_sl" class="slider"></div>
+				<script>noUiSlider.create(document.getElementById('fix_size_sl'),{ start:[0], step:0.01, range:{'min':-3, 'max':3} });</script>
+				<span class="tip">Controls the size of fixation marks</span></div>
+				<br>
+				<div class="tool2">fixation opacity:<div id="fix_alpha_sl" class="slider"></div><br />
+				<div class="tool">fixation sequence
+					<input type="checkbox" id="fixs_saturation" checked="true" onclick="FIXS_SATURATION=this.checked;background_changed=true;">
+					<span class="tip">Toggles showing fixation sequence</span>
+				</div><br >
+				<script>noUiSlider.create(document.getElementById('fix_alpha_sl'),{ start:[-3], step:0.1, range:{'min':-6, 'max':0} });</script>
+				<span class="tip">Controls the opacity of fixation marks</span></div>
+			</div>
+			<hr >
+			<br>
+			<div class="tool2"><button type="button" id="topo" class="toggler" onclick="click_topo();">Saliency Maps: Hidden</button>
+			<div id='topo_controls' style="display:none">
+					<select id="topo_shape">
+						<option value="bell">Bell Curve</option>
+						<option value="inv_square">Inv. Square</option>
+						<option value="hemisphere">Hemisphere</option>
+						<option value="pyramid">Pyramid</option>
+						<option value="cone">Cone</option>
+						<option value="flat">Flat</option>
+					</select><br >
+				Blur Radius:<div id="topo_sl" class="slider"></div>
+				<script>noUiSlider.create(document.getElementById('topo_sl'),{ start:[5], step:0.02, range:{'min':0, 'max':14} });</script>
+			</div>
+			<span class="tip">Draws topographic-style heatmaps of smoothed fixation density for each sample group. Size and Shape of kernel is controllable</span></div>
+			<hr >
+			<div class="tool" style='float:right'><button href="help.html" target="popup" onclick="window.open('help.html#selection','name','width=600,height=400')"><i class="far fa-question-circle"></i></button><span class="tip">Opens help page</span></div>
+			<div class="tool">
+				<button type="button" id="fore" class="toggler toggle-on" onclick="click_fore('spatial');">Spatial</button>
+				<span class="tip">Displays the location of fixations immediately before (red), after (green), or both (yellow) a visit to the selected AOI</span></div>
+			<div class="tool">
+				<button type="button" id="lenshist" class="toggler" onclick="click_fore('lens');">LensHist</button>
+				<span class="tip">Displays the direction around the selected AOI of fixations immediately before (red), after (green), or both (yellow) a visit to the selected AOI</span></div>
+			<div class="tool">
+				<button type="button" id="timehist" class="toggler" onclick="click_fore('time');">TimeHist</button>
+				<span class="tip">Displays a histogram of the timing of fixations immediately before (red), after (green), or both (yellow) a visit to the selected AOI</span></div>
+			<br >
+			
+			<div  class="tool2" id="foreground_controls" style="display:none">
+			<button type="button" id="foresize" class="toggler" onclick="click_size();">Use Fix. Duration</button><br >
+			Foreground size:<div id="fore_size_sl" class="slider"></div>
+			<script>noUiSlider.create(document.getElementById('fore_size_sl'),{ start:[2], step:0.01, range:{'min':-1, 'max':5} });</script>
+			<span class="tip">Controls the size of the marks from the controls above, and whether they are constant proportional to fixation duration</span></div>
+			<hr >
+		</div>
+		
+		<div class="collapsing" id='part2'>
+			<div class="tool">
+			<button type="button" id="sacs" class="toggler" onclick="click_sacs();">Saccades: Hidden</button>
+			<div class="tool" style='display:inline'><button href="help.html" target="popup" onclick="window.open('help.html#saccade','name','width=600,height=400')"><i class="far fa-question-circle"></i></button><span class="tip">Opens help page</span></div>
+			<span class="tip">Toggles showing saccade lines connecting fixations </span></div><br >
+			<div id="saccade_controls" style="display:none">
+				<div class="tool2">
+				Saccade Brightness:<div id="sacc_bright_sl" class="slider"></div>
+				<script>noUiSlider.create(document.getElementById('sacc_bright_sl'),{ start:[3.5], step:0.01, range:{'min':0, 'max':5} });</script>
+				<span class="tip">Controls the brightness of saccade lines</span></div>
+				<div class="tool2">
+				Saccade Blur:<div id="sacc_blur_sl" class="slider"></div>
+				<script>noUiSlider.create(document.getElementById('sacc_blur_sl'),{ start:[0], step:0.1, range:{'min':0, 'max':6} });</script>
+				<span class="tip">Controls the blur of saccade lines, helps to blend them when bundling</span></div>
+				<hr>
+				<div class="tool">
+				AOI Filter:
+				<select id="aoi_filter_list" value="none" onchange="select_fix(this.value)">
+					<option value="none">No Filter</option>
+					<option value="around">Around AOIs</option>
+					<option value="tofrom">To/From AOIs</option>
+					<option value="inside">Inside AOIs</option>
+					<option value="between">Between AOIs</option>
+				</select><br >
+				<span class="tip">Filters saccades based on relationship with AOIs or the selected AOI</span></div>
+				<br>
+				<div class="tool">
+				Data Colouring Mode:<br >
+				<input type="radio" name="Colour" id="group" value="group" checked="checked"><label for="group">By Sample Group</label>
+				<div class="tool">					
+					<input type="checkbox" id="sac_saturation" checked="true" onclick="SACC_SATURATION=this.checked;midground_changed=true;">Saccade sequence
+				</div><br >
+				<input type="radio" name="Colour" id="direction" value="direction"><label for="direction">By Direction</label><br >
+				<input type="radio" name="Colour" id="type" value="type"><label for="type">Glance Type</label>
+				<br >
+				<span class="tip">Controls how saccades are coloured, to show different information</span></div>
+				<br>
+				<div class="tool">
+				Filter by Direction and Type:
+				<table><tr>
+				<th id='t1'><input type="checkbox" id="d1" checked="true" onclick="dir_filter(false)"></th>
+				<th id='t2'><input type="checkbox" id="d2" checked="true" onclick="dir_filter(false)"></th>
+				<th id='t3'><input type="checkbox" id="d3" checked="true" onclick="dir_filter(false)"></th>
+				<th id='tshort'><input type="checkbox" id="dshort" checked="true" onclick="midground_changed=true;"></th><th>Short</th></tr>
+				<tr>
+				<th id='t0'><input type="checkbox" id="d0" checked="true" onclick="dir_filter(false)"></th>
+				<th><input type="checkbox" id="dall" checked="true" onclick="dir_filter(true)"></th>
+				<th id='t4'><input type="checkbox" id="d4" checked="true" onclick="dir_filter(false)"></th>
+				<th id='tbasic'><input type="checkbox" id="dbasic" checked="true" onclick="midground_changed=true;"></th><th>Basic</th></tr>
+				<tr>
+				<th id='t7'><input type="checkbox" id="d7" checked="true" onclick="dir_filter(false)"></th>
+				<th id='t6'><input type="checkbox" id="d6" checked="true" onclick="dir_filter(false)"></th>
+				<th id='t5'><input type="checkbox" id="d5" checked="true" onclick="dir_filter(false)"></th>
+				<th id='tglance'><input type="checkbox" id="dglance" checked="true" onclick="midground_changed=true;"></th><th>Glance</th></tr>
+				</table>
+				<span class="tip">Allows for filtering saccades by direction, length, or whether the saccade is part of a glancing pattern</span></div>
+				<br>
+				<div class="tool2">
+				Short Cutoff: <div id="short_val" style="display:inline-block"></div> <div id="short_sl" class="slider"></div>
+				<script>noUiSlider.create(document.getElementById('short_sl'),{ start:[0], step:1, range:{'min':0, 'max': 1000 } });</script>
+				<span class="tip">Controls the minimum saccade length to be considered in the bundling. Controls cutoff length for the short saccade filter and colouring options</span></div>
+				<br>				
+			</div>
+			<hr >
+			<div class="tool2" id="bundling_controls" style="display: inline">
+				<button type="button" id="bundle" class="toggler" onclick="click_bundle();">Bundle</button>
+				<button type="button" onclick="rebuild_clustering();">Reset Bundle</button>
+				<span class="tip">Allows for edge-bundling the filtered saccades. Short cutoff controls the minimum saccade length to be considered in the bundling. Use "Crop" to zoom in to bundle more saccades. Rigidity controls how much saccades will bend and heat controls how quickly they bundle </span>
+			</div>
+			<div class="tool">
+				<button onclick='return;'><i class="far fa-save"></i></button><span class="tip">Save the saccade values</span>
+			</div>
+			<div id="saccades_bundling_status_txt" style="display:inline-block">Bundling stopped.</div><br>Use "Crop" to zoom in to bundle more saccades. <div id="saccades_bundling_status">Number of saccades being considered in bundling: <div id="number_saccades_being_considered_in_bundling" style="display:inline-block">0</div></div>
+			<br>
+			Rigidity:<div id="K_sl" class="slider"></div>
+			<script>noUiSlider.create(document.getElementById('K_sl'),{ start:[-6], step:0.01, range:{'min':-8, 'max':1} });</script>
+			<br>
+			Heat:<div id="H_sl" class="slider"></div>
+			<script>noUiSlider.create(document.getElementById('H_sl'),{ start:[0], step:0.01, range:{'min':-6, 'max':2} });</script>			
+		</div>
+		<div class="collapsing" id='part3'>
+			<div class="tool">
+			Timeline Mode:
+			<div class="tool" style="display:inline"><button href="help.html" target="popup" onclick="window.open('help.html#timeline','name','width=600,height=400')"><i class="far fa-question-circle"></i></button><span class="tip">Opens help page</span></div>
+			<button type="button" id="timeall" class="toggler toggle-on" onclick="click_time('all');">Coloured AOIs</button> <br >
+			<button type="button" id="timegroup" class="toggler" onclick="click_time('group');">Coloured Group AOIs</button> <br >
+			<button type="button" id="timelens" class="toggler"  onclick="click_time('lens');">AOI (Group) Sequence</button> <br >
+			<button type="button" id="timesaccades" class="toggler"  onclick="click_time('saccades');">Saccade Sequence</button> <br >
+			<button type="button" id="timedata" class="toggler" onclick="click_time('data');">Highlight Selected AOI</button>
+			<span class="tip">Toggles various modes for the timelines: Coloured AOIs (default), AOIs across the Selected Sample, or samples across the Selected AOI. </span></div><br >
+			<br>
+			<div class="tool">
+			Timeline Mouseover Width: <input type="number" id="timewidth" value="30.0" min="0.0" max="120.0" step="0.1"/> seconds <br >
+			<br>
+			<button type="button" id="cumulativetime" class="toggler" onclick="click_timestrat();">Cumulative Duration</button> <br >
+			<span class="tip">Toggles whether the timelines represent the recorded time of fixations (original), or to compress the timeline to a cumulative fixation duration, removing gaps</span></div><br >
+			<div class="tool">
+			<button type="button" id="relativetime" class="toggler" onclick="click_relativetime();"> Absolute Timelines</button>
+			<span class="tip">Toggles whether the timeline is scaled so that all samples use the full length, or whether the true relative length of the datasets is shown</span></div><br >
+			<br>
+			<div class="tool2">
+				Time Animate:<div id="time_animate_sl" class="slider"></div>
+				<script>noUiSlider.create(document.getElementById('time_animate_sl'),{ start:[1], step:0.01, range:{'min':0, 'max':1} });</script>
+				<button type="button" id="time_play" class="toggler" onclick="click_time_play();">Play</button>
+				<span class="tip">Allows for filtering and animating spatial and timeline canvases over time. Does not effect metrics or other viz features</span>
+			</div>
+			<div class="tool2" id="video_controls" style="display: inline">
+				<button type="button" id="control_video" class="toggler" onclick="toggle_videocursors()">Linking Video</button><span class="tip">Toggles video linking visualization</span>
+			</div>
+		</div>
+		<br >
+		<div class="dynamic_legend" id="dynamic_legend" onmouseenter="reset_legend_mouseovers()">
+			<div id="groups_legend"> </div>
+			<div id="directions_legend"> </div>
+			<div id="types_legend"> </div>
+			<div id="order_legend"> </div>
+			<div id="haar_metric"> </div>
+			<div class="tool button" id="sacc_export_button" style="display:none"><button  onclick="export_metrics()"> <i class="far fa-save"></i> </button><span class="tip">Save the current saccade values</span></div>			
+		</div>
+		<div class="tool2" style="display: inline">
+			<button type="button" id="control_tooltip" class="toggler toggle-on" onclick="toggle_tips()">Tooltip</button><span class="tip">Toggles tooltip visibility</span>
+			<button type="button" id="control_greenbox" class="toggler toggle-on" onclick="toggle_green_box_highlights()">Highlight Selected Data</button><span class="tip">Highlight visibility of selected data via green boxes</span>
+		</div>		
+		<br >
+	</div>
+<div class="interface_layout" id="interface">
+	<div class="data_box">
+		<div class="data_top" id="left_box">
+			<div style="margin: 15px;margin-bottom: 0px; padding-left: 33px;">
+				<div class="tabbut" type="button" id="cont1_button" onclick="view_panel(1)" style="background-color:#CCC" >Samples</div>
+				<div class="tabbut" type="button" id="cont2_button" onclick="view_panel(2)">TWIs</div>
+				<div class="tabbut" type="button" id="cont3_button" onclick="view_panel(3)">AOIs  <button type="button" id="control_aoi" class="toggler toggle-on data_pane_button" onclick="control_state('aoi');if(event.stopPropagation){event.stopPropagation();}event.cancelBubble=true;"> <i class="far fa-edit"></i> </button> </div> 
+				<div class="tabbut" type="button" id="cont4_button" onclick="view_panel(4)">Notes <button type="button" id="control_notes" class="toggler data_pane_button" onclick="control_state('notes');if(event.stopPropagation){event.stopPropagation();}event.cancelBubble=true;"> <i class="far fa-edit"></i> </button> </div>
+				<div class="tabbut" type="button" id="cont5_button" onclick="view_panel(5)">Colouring</div>				
+				<div class="tabbut" type="button" id="cont6_button" onclick="view_panel(6)">Export</div>				
+			</div>
+			<div id='cont1' class='data_content' style='display: block'>
+				<center>
+					<input id="new_f" type="file" name="name" style="display: none;" onchange="new_file()" multiple/>
+					<div class="tool"><button id="dataset_button" type="button" onclick="document.getElementById('new_f').click()" >Load .tsv </button><span class="tip">Load a new dataset from a formatted .tsv file or select a group of .tsv files to upload.</span></div>
+					<div id="dataset_load_txt" style="display:inline-block"></div>
+					<div class="tool"><button id="time_control" class="toggler toggle-on" onclick="click_timecontrols()">TWIs</button><span class="tip">Toggle Time Window of Interest controls in Sample List</span></div>
+					<div class="tool"><button id="time_control_canvas" class="toggler" onclick="click_timecontrolForCanvas()"><i class="fas fa-eye"></i></button><span class="tip">Show/hide all samples on the canvas</span></div>
+					<div class="tool"><button href="help.html" target="popup" onclick="window.open('help.html#data','name','width=600,height=400')"><i class="far fa-question-circle"></i></button><span class="tip">Opens help page</span></div>
+					<br >
+					Sort By:
+					<div class="tool"><button type="button" id="sortalpha" onclick="data_sort('alphabet')">Name</button><span class="tip">Sort the datasets alphabetically by name</span></div>
+					<div class="tool"><button type="button" id="sortfixtime" onclick="data_sort('duration')">Duration</button><span class="tip">Sort the datasets by duration</span></div>
+					<div class="tool"><button type="button" id="sortfixtime" onclick="data_sort('fixations')">Fixation</button><span class="tip">Sort the datasets by total fixation duration</span></div>
+					<div class="tool"><button type="button" id="sortfixtime" onclick="data_sort('group')">Group</button><span class="tip">Sort the datasets by group number</span></div>
+				</center>
+				<ul id='mylist' class="data_list"></ul>
+			</div>
+			<div id='cont2' class='data_content'>
+				<center>
+					<div id="twi_load_txt" style="display:inline-block"></div>
+					<div class="tool"><button type="button" id="showtwis" class="toggler" onclick="click_showtwis();"> <i class="fas fa-eye"></i> </button><span class="tip">Show/hide all TWIs on the canvas</span></div>
+					<div class="tool"><button href="help.html" target="popup" onclick="window.open('help.html#data','name','width=600,height=400')"><i class="far fa-question-circle"></i></button><span class="tip">Opens help page</span></div>					
+				</center>
+				<ul id='twilist' class="data_list"></ul>
+			</div>
+			<div id='cont3' class='data_content'>
+				<center>
+					<div class="tool"><button type="button" id="showlens" class="toggler" onclick="click_showlens();"> <i class="fas fa-eye"></i> </button><span class="tip">Toggles visibility of AOIs on spatial canvas</span></div>
+					<div class="tool"><button type="button" class="toggler toggle-on" id="lenstype_0" onclick="select_lenstype(0);">Polygon</button><span class="tip">Make polygon AOIs</span></div>
+					<div class="tool"><button type="button" class="toggler" id="lenstype_1" onclick="select_lenstype(1);">Ellipse</button><span class="tip">Make ellipse AOIs</span></div>
+					<div class="tool"><button type="button" class="toggler" id="lenstype_2" onclick="select_lenstype(2);">Rectangle</button><span class="tip">Make Rectangle AOIs</span></div>
+					<div class="tool"><button href="help.html" target="popup" onclick="window.open('help.html#aois','name','width=600,height=400')"><i class="far fa-question-circle"></i></button><span class="tip">Opens help page</span></div>
+					<br>
+					<div class="tool"><button type="button" class="toggler toggle-on" id="show_lenslabel" onclick="click_showlabel();">Labels</button><span class="tip">Toggles visibility of labels within the AOIs on spatial canvas</span></div>
+				</center>
+				
+				<ul id='lenslist' class="data_list"></ul>
+			</div>
+			<div id='cont4' class='data_content' >
+				<center>
+					<div class="tool"><button type="button" id="notes" class="toggler toggle-on" onclick="click_notes();"> <i class="fas fa-eye"></i> </button><span class="tip">Toggle visibility of notes on spatial canvas</span></div>
+					<div class="tool"><button href="help.html" target="popup" onclick="window.open('help.html#notes','name','width=600,height=400')"><i class="far fa-question-circle"></i></button><span class="tip">Opens help page</span></div>
+				</center>
+				<ul id='notelist' class="data_list"></ul>
+			</div>
+			<div id='cont5' class='data_content' onclick="update_filter_colors();update_group_colors(); update_lens_colors()">
+				<div class="tool"><button href="help.html" target="popup" onclick="window.open('help.html#colours','name','width=600,height=400')"><i class="far fa-question-circle"></i></button><span class="tip">Opens help page</span></div>
+				<p> Data Grouping Colours: </p>
+				<input type="color" id="basic_0" oninput="GROUPINGS[0]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="basic_1" oninput="GROUPINGS[1]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="basic_2" oninput="GROUPINGS[2]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="basic_3" oninput="GROUPINGS[3]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="basic_4" oninput="GROUPINGS[4]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="basic_5" oninput="GROUPINGS[5]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="basic_6" oninput="GROUPINGS[6]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="basic_7" oninput="GROUPINGS[7]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="basic_8" oninput="GROUPINGS[8]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="basic_9" oninput="GROUPINGS[9]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="basic_10" oninput="GROUPINGS[10]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="basic_11" oninput="GROUPINGS[11]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="basic_12" oninput="GROUPINGS[12]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="basic_13" oninput="GROUPINGS[13]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="basic_14" oninput="GROUPINGS[14]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="basic_15" oninput="GROUPINGS[15]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="basic_16" oninput="GROUPINGS[16]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="basic_17" oninput="GROUPINGS[17]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="basic_18" oninput="GROUPINGS[18]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="basic_19" oninput="GROUPINGS[19]=this.value; update_colour_vals();" class="colorer">
+				<br >
+				<p> TWI Colours: </p>
+				<input type="color" id="twic_0" oninput="TWIS_COLOURS[0]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="twic_1" oninput="TWIS_COLOURS[1]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="twic_2" oninput="TWIS_COLOURS[2]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="twic_3" oninput="TWIS_COLOURS[3]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="twic_4" oninput="TWIS_COLOURS[4]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="twic_5" oninput="TWIS_COLOURS[5]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="twic_6" oninput="TWIS_COLOURS[6]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="twic_7" oninput="TWIS_COLOURS[7]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="twic_8" oninput="TWIS_COLOURS[8]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="twic_9" oninput="TWIS_COLOURS[9]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="twic_10" oninput="TWIS_COLOURS[10]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="twic_11" oninput="TWIS_COLOURS[11]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="twic_12" oninput="TWIS_COLOURS[12]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="twic_13" oninput="TWIS_COLOURS[13]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="twic_14" oninput="TWIS_COLOURS[14]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="twic_15" oninput="TWIS_COLOURS[15]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="twic_16" oninput="TWIS_COLOURS[16]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="twic_17" oninput="TWIS_COLOURS[17]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="twic_18" oninput="TWIS_COLOURS[18]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="twic_19" oninput="TWIS_COLOURS[19]=this.value; update_colour_vals();" class="colorer">
+				<br >
+				<p> AOI Colours: </p>
+				<input type="color" id="aoic_0" oninput="LENS_COLOURS[0]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="aoic_1" oninput="LENS_COLOURS[1]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="aoic_2" oninput="LENS_COLOURS[2]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="aoic_3" oninput="LENS_COLOURS[3]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="aoic_4" oninput="LENS_COLOURS[4]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="aoic_5" oninput="LENS_COLOURS[5]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="aoic_6" oninput="LENS_COLOURS[6]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="aoic_7" oninput="LENS_COLOURS[7]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="aoic_8" oninput="LENS_COLOURS[8]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="aoic_9" oninput="LENS_COLOURS[9]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="aoic_10" oninput="LENS_COLOURS[10]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="aoic_11" oninput="LENS_COLOURS[11]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="aoic_12" oninput="LENS_COLOURS[12]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="aoic_13" oninput="LENS_COLOURS[13]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="aoic_14" oninput="LENS_COLOURS[14]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="aoic_15" oninput="LENS_COLOURS[15]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="aoic_16" oninput="LENS_COLOURS[16]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="aoic_17" oninput="LENS_COLOURS[17]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="aoic_18" oninput="LENS_COLOURS[18]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="aoic_19" oninput="LENS_COLOURS[19]=this.value; update_colour_vals();" class="colorer">
+				<br >
+				<p> Saccade Type Colours (Short, Basic, Glance): </p>
+				<input type="color" id="sacc_0" oninput="SACC_TYPES[0]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="sacc_1" oninput="SACC_TYPES[1]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="sacc_2" oninput="SACC_TYPES[2]=this.value; update_colour_vals();" class="colorer">
+				<br ><p> Saccade Directional Colours: </p>
+				<input type="color" id="dir_0" oninput="DIRECTIONS[0]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="dir_1" oninput="DIRECTIONS[1]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="dir_2" oninput="DIRECTIONS[2]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="dir_3" oninput="DIRECTIONS[3]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="dir_4" oninput="DIRECTIONS[4]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="dir_5" oninput="DIRECTIONS[5]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="dir_6" oninput="DIRECTIONS[6]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="dir_7" oninput="DIRECTIONS[7]=this.value; update_colour_vals();" class="colorer">
+				<br >
+				<p> Ordering Colours (Before, Glance, After): </p>
+				<input type="color" id="order_0" oninput="ORDERED[0]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="order_1" oninput="ORDERED[1]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="order_2" oninput="ORDERED[2]=this.value; update_colour_vals();" class="colorer">
+				<br >
+				<p> Matrix Colours (Matrix, Column, Row): </p>
+				<input type="color" id="matrix_0" oninput="MATCOL[0]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="matrix_1" oninput="MATCOL[1]=this.value; update_colour_vals();" class="colorer">
+				<input type="color" id="matrix_2" oninput="MATCOL[2]=this.value; update_colour_vals();" class="colorer">
+				<br >
+			</div>		
+			<div id='cont6' class='data_content' onclick="update_filter_colors();update_group_colors(); update_lens_colors()">
+				<div class="tool"><button href="help.html" target="popup" onclick="window.open('help.html#colours','name','width=600,height=400')"><i class="far fa-question-circle"></i></button><span class="tip">Opens help page</span></div>
+				<p> Spatial Canvas: </p>
+				<div class="tool">
+					<input type="checkbox" checked=true id="export_spatial_canvas" onclick="EXPORT_SPATIAL_CANVAS=this.checked;">
+					<span> Export spatial canvas</span>
+					<input type="checkbox" checked=true id="export_crop_spatial_canvas" onclick="EXPORT_CROP_SPATIAL_CANVAS=this.checked;">
+					<span> Crop spatial canvas by background image</span>
+				</div>
+				<p> Timeline Canvas: </p>
+				<div class="tool">
+					<input type="checkbox" checked=true id="export_timeline_canvas" onclick="EXPORT_TIMELINE_CANVAS=this.checked;">
+					<span> Export timeline canvas</span>
+					<input type="checkbox" checked=false id="crop_timeline_canvas" onclick="EXPORT_CROP_TIMELINE_CANVAS=this.checked;">
+					<span> Crop timeline canvas by timeline chart</span>					
+				</div>
+				<p> Metric Canvas: </p>
+				<div class="tool">
+					<input type="checkbox" checked=true id="export_metric_canvas" onclick="EXPORT_METRIC_CANVAS=this.checked;">
+					<span> Export metric canvas</span>
+				</div>
+			</div>	
+		</div>
+		
+		<div class='matrix_wrapper' onclick="matrix_metric_update()">
+			<div class='matrix_top'><div style="display: inline-block">
+				<button type="button" id="type_video" class="toggler"	 onclick="type_select('video')">VIDEO</button>
+				<button type="button" id="type_mat" class="toggler toggle-on"	 onclick="type_select('mat')">MATRIX</button>
+				<button type="button" id="type_hist" class="toggler"			 onclick="type_select('hist')">HISTOGRAM</button>
+				<div class="tool"><button href="help.html" target="popup" onclick="window.open('help.html#metrics','name','width=600,height=400')"><i class="far fa-question-circle"></i></button><span class="tip">Opens help page</span></div>
+				<br >
+				<div id="video_top_controls" class="hidden">
+					<span class="tool">Selected sample dataset: </span><span class="tool" id="selecteddataset"></span><span class="tool" style="margin-left: 10px">File name: </span><span class="tool" id="videofilename"></span>
+					<div class="tool inner_button"><button  id="#_x" onclick="delete_video();"> <i class="far fa-trash-alt"></i> </button><span class="tip">Delete the video</span></div>
+					<div class="tool inner_button" id="selectfileinput"></div>
+
+					
+				</div>
+				<div id="hist_top_controls" class="hidden">
+					<select id="hist_metric" onchange="HIST_METRIC=this.value">
+						<option value="fix_dur">Fixations, Duration Distribution</option>
+						<option value="fix_aoi_dur">Fixations, Duration Distribution within Selected AOI</option>
+						<option value="fix_lensegroup_dur">Fixations, Duration Distribution within Selected AOI Group</option>						
+						<option value="visit_aoi_dur">Visits, Duration Distribution within Selected AOI</option>
+						<option value="visit_lensegroup_dur">Visits, Duration Distribution within Selected AOI Group</option>
+						<option value="sac_len">Saccades, Length Distribution</option>
+					</select>
+					<input type="number" class="num2" id='BINS_N' value=6 step=1 min=2 max=200 onchange="BINS_N=Math.min(200, Math.max(1, this.value));matrix_changed=true;"> 
+					<div class="tool inner_button"><button  onclick="export_histogram()"> <i class="far fa-save"></i> </button><span class="tip">Save the histogram values</span></div>
+					<div class="tool inner_button"><button  onclick="export_spatial_canvas()"> <i class="far fa-save"></i> </button><span class="tip">Export the current canvas</span></div>
+				</div>
+				<div id="matrix_top_controls">
+					<div id="matsel_0" class="matsel"> <select id="metrics_0" style="font-size:12">
+							<option value="aoi_cosine">Trans. Cosine, AOIs</option>
+							<option value="grid_cosine">Trans. Cosine, Grid</option>
+							<option value="aoi_density">Density Overlap, AOIs</option>
+							<option value="grid_density">Density Overlap, Grid</option>
+							<option value="cont_density">Density Overlap, Kernel</option>
+						</select> </div>
+					<div id="matsel_1" class="matsel"> <select id="metrics_1" style="font-size:12">
+							<option value="aoiarea">Area of AOI</option>	
+							<option value="densitytime">Fixation Density (Time/Area)</option>
+							<option value="densitycount">Fixation Density (Count/Area)</option>
+							<option value="time">Fixations, Total Time</option>
+							<option value="percent">Fixations, Percentage Time</option>
+							<option value="count">Fixations, Count</option>
+							<option value="ratio">Fixations, Mean Duration</option>
+							<option value="meanfixduration">Fixations, Mean Duration (indep. of) AOIs</option>
+							<option value="meansaccadelength">Saccades, Mean Length (indep. of) AOIs</option>
+							<option value="haar">Hit Any AOI Rate</option>
+							<option value="visitcount">Visits, Count</option>
+							<option value="visitmean">Visits, Mean Duration</option>
+						</select> </div>
+					<div id="matsel_2" class="matsel matsel_shown"> <select id="metrics_2" style="font-size:12">
+							<option value="mean_trans1">Mean Trans., Direct</option>
+							<option value="mean_trans2">Mean Trans., Indirect</option>
+							<option value="mean_glances">Mean Trans., Glances</option>
+							<option value="mean_through">Mean Trans., Through Sel. Lens</option>
+							<option value="probability_trans1">Probability Trans., Direct</option>
+							<option value="probability_trans2">Probability Trans., Indirect</option>
+							<option value="probability_glances">Probability Trans., Glances</option>
+							<option value="probability_through">Probability Trans., Through Sel. Lens</option>
+							<option value="trans1">Total Trans., Direct</option>
+							<option value="trans2">Total Trans., Indirect</option>
+							<option value="glances">Total Trans., Glances</option>
+							<option value="through">Total Trans., Through Sel. Lens</option>
+						</select> </div>
+					<div id="matsel_3" class="matsel"> <select id="metrics_3" style="font-size:12">
+							<option value="aoi_sequencescore">AOI Sequence Score</option>
+							<option value="lensegroup_sequencescore">AOI Group Sequence Score</option>
+							<option value="aoi_cosine">Trans. Cosine, AOIs</option>
+							<option value="grid_cosine">Trans. Cosine, Grid</option>
+							<option value="aoi_density">Density Overlap, AOIs</option>
+							<option value="grid_density">Density Overlap, Grid</option>
+							<option value="cont_density">Density Overlap, Kernel</option>
+						</select> </div>
+					<div class="tool">
+						<button type="button" id="col_dat" class="toggler"			 onclick="mat_col_select('dat')">Sample<sub>i</sub></button>
+						<span class="tip">Uses columns in matrix to represent Samples</span>
+					</div>
+					<div class="tool">
+						<button type="button" id="col_grp" class="toggler"			 onclick="mat_col_select('grp')">Sample<sub>g</sub></button>
+						<span class="tip">Uses columns in matrix to represent Groupings of samples</span>
+					</div>
+					<div class="tool">
+						<button type="button" id="col_aoi" class="toggler toggle-on" onclick="mat_col_select('aoi')">AOI<sub>i</sub></button>
+						<span class="tip">Uses columns in matrix to represent AOIs</span>
+					</div>
+					<div class="tool">
+						<button type="button" id="col_lensegroup" class="toggler" onclick="mat_col_select('lensegroup')">AOI<sub>g</sub></button>
+						<span class="tip">Uses columns in matrix to represent Groupings of AOIs</span>
+					</div>
+					<div class="tool">
+						<button type="button" id="col_toi" class="toggler"			 onclick="mat_col_select('toi')">TWI<sub>i</sub></button>
+						<span class="tip">Uses columns in matrix to represent Time Windows of Interest within the selected sample</span>
+					</div>
+					<div class="tool">
+						<button type="button" id="col_twigroup" class="toggler"			 onclick="mat_col_select('twigroup')">TWI<sub>g</sub></button>
+						<span class="tip">Uses columns in matrix to represent Groupings of Time Windows of Interest within the selected sample</span>
+					</div>					
+					<div class="tool inner_button"><button  onclick="export_matrix()"> <i class="far fa-save"></i> </button><span class="tip">Save the metric values</span></div>
+					<div class="tool inner_button"><button  onclick="export_spatial_canvas()"> <i class="far fa-save"></i> </button><span class="tip">Export the current canvas</span></div>
+					<div class="tool">
+						<input type="checkbox" id="matrix_write" onclick="MATRIX_WRITE=this.checked;matrix_redraw=true;">
+						<span class="tip">Toggles showing the exact value in the middle of matrix cells</span>
+					</div>
+					<div id="grid_num" class="matsel tool">
+						<input type="number" class="num2" id='GRID_N' style='width:40px'value=6 step=1 min=2 max=50 onchange="GRID_N=Math.min(50, Math.max(1, this.value));matrix_changed=true;">
+						<span class="tip">Controls the number of grid cells (N by N) used in grid-based relative density metrics</span>
+					</div>
+					<div class="tool">
+						<input type="checkbox" id="matrix_minimap" style="display:none" value="checked" onclick="matrix_redraw=true">
+						<span class="tip">Toggles showing small views of density comparison maps within matrix cells</span>
+					</div>
+					<div id='sort_button' style="display: none">
+						<select id="sort_dropdown">
+							<option value="No_sort" selected="true">---Choose a matrix reordering method</option>
+							<option value="optimal_leaf_order">Optimal Leaf Order</option>
+							<option value="reverse_cuthill_mckee_order" id="reverse_cuthill_mckee_order" style="display: none">Reverse Cuthill Mckee Order</option>
+							<option value="pca_order" id="pca_order" style="display: none">PCA order</option>
+						</select>
+					</div>
+					
+				</div>
+			</div></div>
+
+			<div class='matrix_left_dot'><div class='matrix_left'>
+				<div id="matrix_left_controls"><div style="display: inline-block">
+					<button type="button" id="row_dat" class="toggler"			 onclick="mat_row_select('dat')">Sample<sub>i</sub></button>
+					<button type="button" id="row_grp" class="toggler"			 onclick="mat_row_select('grp')">Sample<sub>g</sub></button>
+					<button type="button" id="row_aoi" class="toggler toggle-on" onclick="mat_row_select('aoi')">AOI<sub>i</sub></button>
+					<button type="button" id="row_lensegroup" class="toggler"    onclick="mat_row_select('lensegroup')">AOI<sub>g</sub></button>
+					<button type="button" id="row_toi" class="toggler"			 onclick="mat_row_select('toi')">TWI<sub>i</sub></button>
+					<button type="button" id="row_twigroup" class="toggler"		 onclick="mat_row_select('twigroup')">TWI<sub>g</sub></button>
+				</div></div>
+			</div></div>
+			<div class='matrix_center' id='matrix_center'> <div id="pj3" class="matrix"></div> </div>
+		</div>
+	</div>
+	<div></div>
+	<div class="canvas_box" id="canvas_box">
+		<span style="background-color: aqua; font-size:12; font-family: Arial, sans-serif">Data filtering:</span>
+		<div class="tool" style="display: inline"><button type="button" id="dat_mode" class="toggler toggle-on dat_mode" onclick="click_dat_mode();">All Samples</button><span class="tip">Toggles showing the entire data, selected individual data, or selected group</span></div>
+		<div class="tool" style="display: inline"><button type="button" id="twi_mode" class="toggler toggle-on twi_mode" onclick="click_twi_mode();">All TWIs</button><span class="tip">Toggles showing the entire twi data, selected individual twi, or selected twi group</span></div>
+		<div class="tool" style="display: inline"><button type="button" id="lense_mode" class="toggler toggle-on lense_mode" onclick="click_lense_mode();">Selected AOI Group</button><span class="tip">Toggles showing selected individual AOI, or selected AOI group</span></div>
+		<span style="background-color: yellow; font-size:12; font-family: Arial, sans-serif">Shortcut:</span>
+		<div class="tool" style="display: inline"><button type="button" id="aoi_sequence_shortcut" class="toggler toggle-on dat_mode" onclick="click_shortcut('aoi_sequence_shortcut')">AOI Sequence</button><span class="tip">To open up AOI sequence comparison or transition cosine similarity matrix with AOI (group) sequence timelines</span></div>
+		<div class="tool" style="display: inline"><button type="button" id="saccade_distribution_shortcut" class="toggler toggle-on dat_mode" onclick="click_shortcut('saccade_distribution_shortcut')">Saccade Distribution</button><span class="tip">To see the histogram of saccade length distribution with saccades visualisations</span></div>
+		<div class="tool" style="display: inline"><button type="button" id="aoi_fixation_mode_shortcut" class="toggler toggle-on dat_mode" onclick="click_shortcut('aoi_fixation_mode_shortcut')">Fixation Overlap</button><span class="tip">To see the fixation density overlap comparisons with Coloured AOI (group) timelines</span></div>		
+		<div class="tool" style="display: inline"><button type="button" id="report_mode_shortcut" class="toggler toggle-on dat_mode" onclick="click_shortcut('report_mode_shortcut')">Storytelling</button><span class="tip">To see the gaze replay over timelines, turn on "Fixations" and "Saccades", move the timeline animate slider, click on "Play"</span></div>		
+		<div id="pj1" width="100%" style="margin-bottom: 1px;"></div> 
+		<div id="pj2" width="100%" style="margin: 0px;"></div> 
+	</div>	
+	
+</div>
+</body>
+<script> on_document_load(); 
+App.main();
+</script>
+</html>

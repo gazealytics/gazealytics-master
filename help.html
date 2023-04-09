@@ -1,0 +1,226 @@
+<html>
+<style>
+p {
+	text-indent: 0px;
+	margin-left: 25px;
+}
+</style>
+<link rel="stylesheet" href="help.css">
+<body>
+
+<div id='help' />
+<div id='overview' />
+
+<h2 class="header">Layout Overview</h2>
+<center> <image src="/layout.png" style="width:50%"/> </center>
+
+<h3>Visualisation is split across 3 panels:</h3>
+<div class="div_class">
+	<b><a href="#spatial">Spatial Canvas:</a></b> In the middle of the interface. Shows the spatial layout of the data, and any visualisation with spatial significance, including fixation marks, topographic density maps, saccades, etc.
+	<br ><br>
+	<b><a href="#timeline">Timeline Canvas:</a></b> Immediately below the spatial canvas. Shows a timeline of the data, and any visualisation based around time.
+	<br ><br>
+	<b><a href="#metrics">Metrics Canvas:</a></b> In the bottom left corner of the interface. Shows statistical information about the data, with its own set of controls. Can either be a matrix of values for comparison statistics, or a histogram for distributions.
+</div>
+
+
+<h3>The data panel has 4 tabs:</h3>
+<div class="div_class">
+	<b><a href="#data">Samples List:</a></b> Allows for loading samples from .tsv files, or for loading or saving the project, and for editting controls that are specific to a sample.
+	<br><br>
+	<b><a href="#aois">Areas of Interest List:</a></b> Allows for creating and editting Areas of Interest in the spatial canvas, which allow for derived statistics and comparisons.
+	<br ><br>
+	<b><a href="#notes">Notes:</a></b> Allows for attaching plain text notes to the spatial canvas, for additional context or for recording findings.
+	<br><br>
+	<b><a href="#colours">Colours:</a></b> Allows for changing the default colouring options used by the visualisation to some other colour scheme.
+</div>
+
+
+
+<h3>The controls panel has 4 tabs:</h3>
+<div class="div_class">
+	<b>Overview:</b> Has controls for loading a background image, changing the location of the canvas, changing the data clustering requirements, and cropping the spatial canvas.
+	<br><br>	
+	<b><a href="#fixation">Fixations:</a></b> Has controls for marking fixations on the spatial canvas, for contour maps of fixation density, and for marking the fixations around a selected AOI.
+	<br><br>
+	<b><a href="#saccade">Saccades:</a></b> Has controls for marking saccades on the spatial canvas, and for colouring, filtering, and bundling those saccades.
+	<br><br>
+	<b><a href="#timeline">Timeline:</a></b> Has controls for the mode and data representation on the timeline as well as controls for filtering the spatial and timeline canvas marks by time, and for animating the visualisation.
+</div>
+
+
+
+
+<h2 class="header" id='data'>Sample List</h2>
+<div class="div_class">
+New datasets, consisting of tsv files with three columns: Time, X-location, and Y-location, can be loaded in from the &quot;Load .tsv&quot; button. Time is assumed to be in milliseconds, and the location on an arbitrarily sized plane, preferably starting from 0. Multiple datasets can be loaded simultaneously by opening multiple files. Each sample is represented in a list, with several controls. It can be deleted with the bin-button, hidden with the eye-button, renamed, and assigned to a group value, which controls the colour that is used and allows samples to be grouped. The samples in the list can be reordered by dragging the coloured panel on the left side to a new location.
+</div>
+<h2 class="header">TOI list</h2>
+<div class="div_class">
+Each Sample can further be filtered onto a window of time. Multiple different time intervals of interest can be created and defined, either on the timeline attached to the sample or using the timeline canvas if the sample is selected. Metrics over these different time intervals of interest can then be compared on the matrix canvas.
+</div>
+<h2 class="header">Clustering</h2>
+<div class="div_class">
+Raw eye-movement data is clustered onto the selected space (determined by the size and offset controls, or by cropping), using the minimum distance and duration controls in the overview tab. A fixation is marked whenever sample attention stays within a given area for some time period. Fixations outside the current rectangle of consideration, or which were shorter than the minimum duration, are excluded.
+</div>
+<h2 class="header">Cropping</h2>
+<div class="div_class">
+<h3>Scale and Offset</h3>
+<p>
+The position of the data in relation to the canvas, the background and AOI can be adjusted by changing the scale and offset values. 
+</p>
+<div id='cropping' />
+<h3>Cropping</h3>
+<p>
+The rectangle of possible coordinates (from x and y coordinates, with span width and height) that will be included within the analysis can be altered either using the &quot;from&quot; and &quot;span&quot; controls in the Overview tab, or by cropping on the canvas. To crop on the canvas, select the crop control option in the overview tab, and then drag a rectangle on the spatial canvas to select it. Alternatively you can click on an AOI to crop to the bounding rectangle of that AOI. The width and height of the cropped area (in relation to the data values) is shown under the crop button in the &quot;from&quot; and &quot;span&quot; fields. While cropping, all mouse-clicks on the spatial canvas will be interpreted as cropping until the crop tool is deselected. Cropping can be undone with the <q>undo</q> button, or reset to the size of the uploaded background image (if one exists), with the <q>reset</q> button.
+</p>
+</div>
+
+<h2 class="header" id='aois'>Areas of Interest List</h2>
+<div class="div_class">
+Areas of Interest can be defined on the spatial canvas as either a polygon, ellipse, or rectangle. The kind of AOI to be created can be selected from the AOI panel, and then two or more clicks can be made on the spatial canvas to define the shape. AOIs can then be renamed, reordered, deleted, or hidden on the AOI list. AOIs can be reshaped on the spatial canvas by dragging from near an edge or polygon vertex, or exact values of the perimeter can be edited on the AOI list. A single AOI at a time can be selected, which can be used to filter the data on or around.
+Additionally, Metrics, distributions and transition patterns on and between the AOIs can be calculated and viewed on the matrix canvas.
+</div>
+
+<h2 class="header" id='notes'>Notes</h2>
+<div class="div_class">
+Notes can be added anywhere on the canvas and repositioned by clicking and dragging within the canvas area. To add or move a Note click on the drawing icon on the tab, then click on the canvas. Clicking on the canvas will continue to add notes until the drawing icon is de-selected or another selection mode (e.g. AOI) has been selected.
+</div>
+
+<h2 class="header" id='colours'>Colours</h2>
+<div class="div_class">
+The colours for various features can be edited through the colour tab. Select the colour you wish to edit by clicking on it, make changes in the pop-up window then click outside the window to continue working.
+</div>
+
+<h2 class="header" id='spatial'>Spatial</h2>
+<div class="div_class">
+	The spatial canvas displays spatial properties of the datasets, split over several different features. For features that draw all datasets, samples are drawn in the order they are listed in the sample list. For features that only draw using one dataset, the current selected dataset is used. Other non-data information, such as the precise location of areas of interest or users notes, are also drawn on the spatial canvas.
+	The spatial canvas features, in order from back to front:
+	<br><br>
+	<b>Background image:</b> Optionally, a background image can be attached to a project to provide spatial context. The brightness for this background image can be controlled by a slider in the Overview tab.
+	<br><br>
+	<div id='fixation' />
+	<b>Fixations:</b> Draws a circular mark at the location of each fixation within the selected time interval of each sample. Colour depends on the group value of the sample, and size is proportional to the length in time that the sample fixated for. Relative size and mark transparency can both be controlled using sliders on the fixation panel.
+	<br><br>
+	<b>Contours:</b> Draws a contour map for each sample, using a kernel-density estimation based on the fixations within the selected time interval. Kernel shape and width can both be controlled. Colour again depends on the group value of the sample.
+	<br><br>
+	<div id='saccade' />
+	<b>Saccades:</b> Draws the saccades, the transitions between fixations, for each sample. Width and brightness can both be controlled by sliders. The saccades can be filtered by direction (into 8 general directions) or by type (short saccades or glancing saccades). Saccades can also be filtered by their interaction with the AOIs (eg. saccades within an AOI, to or from an AOI, around an AOI, between different AOIs). Saccades can be coloured in 3 ways: By the group value of the sample, by the direction, or by the saccade type.
+	Additionally, saccades for each sample can be bundled spatially, based on the current filtering and colour mode, with a user-defined amount of elasticity and heat. This only affects the spatial view of the saccade data.
+	<br><br>
+	<b>Foreground fixation marks and histograms:</b> Shows fixations from the selected dataset which are immediately before, after, or both (ie. glances) fixations within the selected AOI. These fixations can be shown at their correct spatial location, as a histogram above the timeline marking when they occurred, or as a histogram around the AOI perimeter marking the direction the chronologically adjacent fixation is located in. This can be used to show relationships between regions of the stimuli which the sample often transitions between, and the directionality of such patterns. The colour of the mark depends on its type, the shape is circular, and the size is either constant or proportional to the duration of the fixation, and can be controlled with a slider.
+	<br><br>
+	<b>Time Animate:</b> Filters data chronologically, showing only the first portion of the timeline from 0 to 1, and allows for animating the change in the data over time. Effects the fixation and saccade marks on the spatial view, and the timeline, but not any of the metrics.
+	<br><br>
+	<b>AOIs:</b> The exact locations of the user-defined areas of interest can be shown on the spatial canvas. Additionally, the spatial canvas can be used to select an AOI, drag it to a new area, reshape it (by dragging from the edges or vertices), or delete it using the delete key.
+	<br><br>
+	<b>Notes:</b> The user can attach text notes to a sample dataset and display them at a chosen location on the screen. These text notes can similarly be defined and created on the spatial canvas.
+</div>
+
+<h2 class="header" id='timeline'>Timeline</h2>
+<div class="div_class">
+	Shows a timeline representing the data in one of two ways. Additionally, allows for selecting a dataset or AOI depending on the mode, and for creating, moving, and deleting TOIs on the selected dataset.
+	Additionally, on matrix mouseover events, the time locations of fixations, saccades, or transition events in the selected dataset are shown immediately below the timeline, depending on the matrix metric selected.
+
+	<br><br><b>Coloured lens:</b> Lenses on the spatial canvas are assigned colours, using the same pattern as the default for directional colouring.rows in the timeline represent datasets, marked in black if no fixation happened at that time, grey if the fixation was outside every lens, or in the colour of the lowest AOI (in the AOI list) which the fixation was inside of. 
+	<br><br><b>Selected dataset:</b> Shows a grey timeline of the fixations for the selected sample, under its current time filter, including the current start and end times. The timeline is split by any active areas of interest, and fixations within a given AOI are marked in white on the timeline. 
+	<br><br><b>Selected lens:</b> Shows a separate timeline for fixations for each active sample, under its current time filter, marked in white if inside the selected AOI and grey otherwise. Start and end times for each sample are marked at the start and ends of the timeline.
+	<br>
+	<br><br><b>Cumulative:</b> Displays accumulated fixation durations. This sets the start time to zero and removes time in between fixations in the datasets, so that there are no gaps in the data. This makes visual space in the timeline match fixation duration, and covers up gaps in recordings.
+	<br><br><b>Absolute Timelines:</b> Toggles whether the datasets in the timelines are stretched to fill the entire length, or are shown relative to their actual duration.
+</div>
+
+<div id='metrics' />
+<h2 class="header">Metrics</h2>
+<div class="div_class">
+<h3>Matrix</h3>
+	<p>
+	Very readable for most comparisons at 10 by 10 items or below. Still readable for some comparisons at up to 24 by 24 but users cannot clearly read the row and column names, which have varying importance. Mouseover can still provide the row and column names for any comparison and the exact value of the metric, but this is more cumbersome.
+	</p>
+	
+	<h4>aoi_aoi transition measures</h4>
+	<p>
+	Are applied to the selected dataset, and show the frequency of transition interactions between the areas of interest. On mouseover, the exact times and locations of the transition events are shown on the timeline and spatial canvases.
+	<br><br>
+	<b>Direct Transitions:</b> Mark the number of times user attention transitioned directly from the row AOI to the column AOI, in one saccade between two fixations.
+	Useful for seeing relative transition rate between AOIs, suggests a task-relationship.
+	<br><br>
+	<b>Indirect Transitions:</b> Mark the number of times user attention transitioned from the row AOI to the column AOI, possibly visiting areas not inside any other AOI but not visiting another AOI, possibly over multiple saccades.
+	Useful for seeing relative transition rate between AOIs, suggests a task-relationship.
+	<br><br>
+	<b>Glances:</b> Mark the number of times user attention transitioned from the row AOI, to the column AOI, and then back to the row AOI. This can represent a glance between the two regions and might suggest a stronger relationship if it occurs frequently.
+	Useful for seeing area visits which are wrapped around a visit to a different area, suggests a much stronger task-relationship.
+	<br><br>
+	<b>Through Selected Lens:</b> Involves a third lens, the currently selected lens. Marks the number of times user attention transitioned from the row AOI, to the selected AOI, to the column AOI. Useful for observing some higher-level interactions between regions.
+	Useful for seeing 3-AOI patterns, only current way to find them.
+	</p>
+
+	<h4>aoi_dat transitions measures</h4>
+	<p>
+	Show properties of each sample (Sample), time interval of interest of the selected sample (TOI), or groups of samples (GRP), when restricted separately onto the defined areas of interest. 
+	<br><br>
+	<b>Fixation, Total Time:</b> The total amount of time, in milliseconds, that the dataset spent looking within a given AOI.
+	<br><br>
+	<b>Fixation, Percentage Time:</b> The percentage of total fixation time, that the dataset spent looking within a given AOI.
+	Useful for comparing the distribution across AOIs between samples.
+	<br><br>
+	<b>Fixations, Count:</b> The total number of fixations that the sample makes within a given AOI.
+	Useful for comparing the distribution across AOIs between samples.
+	<br><br>
+	<b>Fixations, Mean Duration:</b> The mean amount of time, in milliseconds, that fixations lasted within an AOI for a dataset.
+	Useful for comparing the distribution across AOIs between samples, and for comparing the general length of fixations within AOIs across samples.
+	<br><br>
+	<b>Fixations, Median Duration:</b> The median amount of time, in milliseconds, that fixations lasted within an AOI for a dataset.
+	Useful for comparing the distribution across AOIs between samples, and for comparing the general length of fixations within AOIs across samples.
+	<br><br>
+	<b>Visits, Count:</b> The number of distinct times a sample's gaze visited a given AOI.
+	<br><br>
+	<b>Visits, Mean Duration:</b> The mean duration, in ms, that the samples attention stays within the given AOI.
+	Useful for showing which AOIs hold the samples attention for more or less time.
+	</p>
+	
+	<h4>dat_dat similarity measures</h4>
+	<p>
+	Used for comparing the similarity of sample datasets, or time windows within samples, or different groups of samples, using various measures of similarity in the spatial distribution of fixations or saccades, across either user-defined areas of interest, an arbitrary grid of cells, or a continuous model of the discrete observed sample distribution. Additionally, spatial comparison maps of the fixation density between any two such sets can be viewed in small multiples or when mousing over a given comparison.
+
+	<br><br><b>Metrics Used:</b>
+	<br><br>
+	<b>Transition Cosine, AOIs:</b> Considers the set of direct transitions between pairs of AOIs as a vector. Metric is the cosine of the angle between the two vectors for two datasets, 1 if identical and 0 if completely distinct.
+	<br><br>
+	<b>Transition Cosine, Grid:</b> As above, but with the AOIs used being an arbitrary N by N grid where N is chosen by the user, and transition rates between cells on this grid being compared.
+	<br><br>
+	<b>Density Overlap, AOIs:</b> Considers the amount of time samples spent in each AOI or in no AOI as a density, normalised to sum to one. Metric is the sum of the minimums of the two densities over the set of AOIs or no AOI, 1 if identical and 0 if completely distinct.
+	<br><br>
+	<b>Density Overlap, Grid:</b> As above, but with the AOIs used being an arbitrary N by N grid where N is chosen by the user, and the relative amount of time spent focused in each grid square is being compared.
+	<br><br>
+	<b>Density Overlap, Kernel:</b> Defines a high-resolution kernel density map over the spatial domain for how much normalised time is spent near each location by the sample. Shape and radius of the kernel are both controlled by the user. Metric is defined as the overlap of the normalised distributions, 1 if identical and 0 if completely distinct.
+	</p>
+
+<h3>Matrix Reordering</h3>
+	<p>
+	Algorithms to find appropriate matrix reordering, which makes patterns of sample datasets, or fixations within samples, or different groups of samples in matrices visible. The methods below apply to reorder visual matrices of tabular data or adjacency matrix of networks.
+	<br><br>
+	<b>Optimal Leaf Order</b> Useful to reveal potential group patterns of sample datasets or between different groups of samples. Similar rows (and respective columns) of sample datasets, or fixations within samples, or different groups of samples are arranged close together. Dissimilar rows (and respective columns) are arranged further apart. This method supports both square and rectangular matrix.
+	<br><br>
+	<b>Reverse Cuthill Mckee</b> Useful to reveal potential visual patterns of transitions between pairs of AOIs. All the non-zero cells are placed close to the diagonal. It is a graph-based approach and thus supports only square matrix. It minimises the bandwidth (i.e., max distance between rows (and respective columns)) in a given ordering. 
+	<br><br>
+	<b>Principal Component Analysis</b> A dimension reduction-based approach useful to reveal potential off-diagonal patterns, and tends to produce patterns along the anti-diagonal of a matrix. This method supports only square matrix.
+</p>
+</div>
+
+<h2 class="header">Histograms</h2>
+<div class="div_class">
+<p>
+Allows for viewing distribution-like statistics about the datasets.
+<br><br>
+<b>Fixation Duration:</b> Histogram of the fixation durations for the selected sample, filtered onto the selected lens if one exists.
+<br><br>
+<b>Visit, Duration:</b> Shows the full distribution of visit durations for the selected sample with respect to the selected lens.
+<br><br>
+<b>Saccade, Length:</b> Histogram of the saccade lengths for the selected sample.
+</p>
+</div>
+
+</body>
+
+</html>
