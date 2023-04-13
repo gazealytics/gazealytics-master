@@ -8,6 +8,9 @@ It supports a flexible interface for integration into analysts' existing workflo
 
 A live instance can be found at https://www2.visus.uni-stuttgart.de/gazealytics/.
 
+## Citation
+Chen, K. T., Prouzeau, A., Langmead, J., Whitelock-Jones, R. T., Lawrence, L., Dwyer, T., ... & Goodwin, S. (2023). *Gazealytics: A Unified and Flexible Visual Toolkit for Exploratory and Comparative Gaze Analysis.* arXiv preprint [arXiv:2303.17202](https://arxiv.org/pdf/2303.17202.pdf).
+
 ## Gallery
 The examples below are meant to showcase Gazealytics's capabilities as a unified and flexible visual eye tracking analytics toolkit. It is ready to be integrated into users' existing data analysis workflow.
 
