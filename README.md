@@ -60,6 +60,8 @@ conda install -c conda-forge pocl
 This starts a server in development mode at http://localhost:8080/.
 pyopencl is not required unless working with saccade bundling visualisations
 
+## Examples
+
 ## Team 
 The toolkit is developed by:
   * Kun-Ting Chen (University of Stuttgart)
