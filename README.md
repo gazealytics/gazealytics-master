@@ -1,4 +1,6 @@
-## Introduction 
+# Gazealytics: A Unified and Flexible Visual Toolkit for Exploratory and Comparative Gaze Analysis
+
+## Introduction
 
 Gazealytics is a sophisticated, web-based visual eye tracking analytics toolkit that features a unified combination of gaze analytics features that support flexible exploratory analysis, along with annotation of areas of interest (AOI), time-window of interest (TWI) and filter options based on multiple criteria to visually analyse eye tracking data across time and space. 
 
@@ -11,7 +13,22 @@ A live instance can be found at https://www2.visus.uni-stuttgart.de/gazealytics/
 ## Citation
 Chen, K. T., Prouzeau, A., Langmead, J., Whitelock-Jones, R. T., Lawrence, L., Dwyer, T., ... & Goodwin, S. (2023). *Gazealytics: A Unified and Flexible Visual Toolkit for Exploratory and Comparative Gaze Analysis.* arXiv preprint [arXiv:2303.17202](https://arxiv.org/pdf/2303.17202.pdf).
 
-## Gallery
+Please reference using the reference below:
+
+@article{chen2023gazealytics,
+  title={Gazealytics: A Unified and Flexible Visual Toolkit for Exploratory and Comparative Gaze Analysis},
+  author={Chen, Kun-Ting and Prouzeau, Arnaud and Langmead, Joshua and Whitelock-Jones, Ryan T and Lawrence, Lee and Dwyer, Tim and Hurter, Christophe and Weiskopf, Daniel and Goodwin, Sarah},
+  journal={arXiv preprint arXiv:2303.17202},
+  year={2023}
+}
+
+## Requirements
+  * This repository
+  * Python 3.5 or above (web server scripting)
+
+## Tutorial
+
+## Visualizations
 The examples below are meant to showcase Gazealytics's capabilities as a unified and flexible visual eye tracking analytics toolkit. It is ready to be integrated into users' existing data analysis workflow.
 
 ![IMAGE ALT TEXT](/images/multiway_exploration.PNG)
@@ -27,6 +44,32 @@ Analytical results can be easily exported and integrated into users' own statist
 ![IMAGE ALT TEXT](/images/realtime_visual_metrics.PNG)
 Visual support of interactive exploration of AOIs. The coordinated views of spatial panel, quantitative visual metrics, and AOI sequence chart helps a user to find a more suitable AOI definition. 
 
+## Development
+To run Gazealytics from its source code simply run the following:
+
+Download and install [miniconda](https://docs.conda.io/en/latest/miniconda.html)
+```
+conda install -c conda-forge ujson 
+conda install -c conda-forge py 
+conda install -c conda-forge numpy
+conda install -c conda-forge pyopencl 
+conda install -c conda-forge pocl
+<the path to python3.7 binary> <the path to server.py>
+```
+
+This starts a server in development mode at http://localhost:8080/.
+pyopencl is not required unless working with saccade bundling visualisations
+
+## Team 
+The toolkit is developed by:
+  * Kun-Ting Chen (University of Stuttgart)
+  * Joshua Langmead (Monash University)
+  * Yao Wang (University of Stuttgart)
+  * Sarah Goodwin (Monash University)
+
+Past developers:
+  * Ishwari Bhade (Monash University)
+  * Ryan T Whitelock-Jones (Monash University)
 
 ## License
 Gazealytics is provided under the MIT License.
