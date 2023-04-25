@@ -22,27 +22,112 @@ Please reference using the reference below:
   year={2023}
 }
 
+## Used by
+Cai, M., Zheng, B., & Demmans Epp, C. (2022, July). Towards Supporting Adaptive Training of Injection Procedures: Detecting Differences in the Visual Attention of Nursing Students and Experts. In Proceedings of the 30th ACM Conference on User Modeling, Adaptation and Personalization (pp. 286-294).
+
+Chen, K. T., Ngo, Q. Q., Kurzhals, K., Marriott, K., Dwyer, T., Sedlmair, M., & Weiskopf, D. (2023). Reading Strategies for Graph Visualizations that Wrap Around in Torus Topology. arXiv preprint arXiv:2303.17066.
+
+Pozdniakov, S., Martinez-Maldonado, R., Tsai, Y. S., Echeverria, V., Srivastava, N., & Gasevic, D. (2023, March). How Do Teachers Use Dashboards Enhanced with Data Storytelling Elements According to their Data Visualisation Literacy Skills?. In LAK23: 13th International Learning Analytics and Knowledge Conference (pp. 89-99).
+
 ## Requirements
   * This repository
   * Python 3.5 or above (web server scripting)
 
 ## Tutorial
 
-## Visualizations
+## Visual analysis examples
 The examples below are meant to showcase Gazealytics's capabilities as a unified and flexible visual eye tracking analytics toolkit. It is ready to be integrated into users' existing data analysis workflow.
 
-![IMAGE ALT TEXT](/images/multiway_exploration.PNG)
+![An exploration can begin at any stage of multi-way visual exploration (a-f) and move between them as shown by arrows.](/images/multiway_exploration.PNG)
 An exploration can begin at any stage of multi-way visual exploration (a-f) and move between them as shown by arrows. 
     
-![IMAGE ALT TEXT](/images/webveta.png)
+![Multiple coordinated views of (a) data management panel; (b) spatial panel; (c) parameter control panel; (d) metric panel; (e) timeline panel.
+The flexible user interface helps users to perform visual analysis across multiple eye tracking analytical tasks.](/images/webveta.png)
 Multiple coordinated views of (a) data management panel; (b) spatial panel; (c) parameter control panel; (d) metric panel; (e) timeline panel.
 The flexible user interface helps users to perform visual analysis across multiple eye tracking analytical tasks. 
 
-![IMAGE ALT TEXT](/images/stat_integration.PNG)
+![Analytical results can be easily exported and integrated into users' own statistical testing pipeline.](/images/stat_integration.PNG)
 Analytical results can be easily exported and integrated into users' own statistical testing pipeline.
 
-![IMAGE ALT TEXT](/images/realtime_visual_metrics.PNG)
+![Visual support of interactive exploration of AOIs. The coordinated views of spatial panel, quantitative visual metrics, and AOI sequence chart helps a user to find a more suitable AOI definition.](/images/realtime_visual_metrics.PNG)
 Visual support of interactive exploration of AOIs. The coordinated views of spatial panel, quantitative visual metrics, and AOI sequence chart helps a user to find a more suitable AOI definition. 
+
+## Visualizations
+The examples below are meant to demonstrate Gazealytics's capability of visual analysis for multiple eye tracking analytical tasks.
+
+### Raw gaze sequence visualization/scanpath visualization with fixation filtering
+Data inspection before imposing any fixation filtering: Left: raw gaze sequence; Right: scanpath with fixation filtering. By default, Gazealytics implements Poole and Ball's dispersion-based algorithm (IDT).
+![Raw gaze sequence visualization/scanpath visualization with fixation filtering](images/raw_gaze_sequence_vs_scanpath_with_fixation_filtering.jpg)
+
+### Coordinated views: Scanpath and timelines
+Within-subject scanpath comparison of trials, ordered by task speed. The annotations (a)-(n) and tickes/crosses are done externally using Paint.
+
+![Within-subject scanpath comparison of trials, ordered by task speed. The annotations (a)-(n) and tickes/crosses are done externally using Paint](images/scanpath_with_timelines.png)
+
+### Scanpath by saccade types 
+Short/long/glance saccade, where short saccade cutoff can be set to a range between 0 and max pixels. For example, it is set to 100 pixels in this this illustration.
+
+![Scanpath by saccade types ](images/scanpath_by_saccade_types.png)
+
+
+### Scanpath visualization with overlaid density maps
+Scanpath can be drawn with density map (implemented in contours with Bell-curve) to gain both gaze sequence and fixation distribution.
+![Scanpath can be drawn with density map (contours)](images/scanpath_with_density_maps.png)
+
+Saccades are classified into short, long, glance types. Saccade filtering is applied to explore the gaze transitions between AOIs.
+
+![Saccades can be classified by short, long, glance types; saccade filtering: between AOIs](images/saccade_types_with_saccade_filtering.png)
+
+### spatiotemporal visualization linked with TWI and video
+Example of Gazealytics GUI layout showing data panel (upper left), spatial panel, video panel, timeline panel, and control panel (right).
+
+Spatiotemporal visualizations can be linked with time-window-of-interests (TWI) and videos. When a specific TWI is chosen, the video will be automatically set to corresponding start time of the selected TWI. 
+
+![spatiotemporal visualization linked with TWI and video](images/spatiotemporal_visualization_linked_with_TWI_and_video.png)
+
+ps: known issue: synchronizing timeline when playing the gaze video is to be fixed
+
+### Aggregated saccade visualization/saccade bundling
+
+### Interactive annotation of area of interests
+
+### Interactive visual aggregation and group level visualizations
+An exploration can begin at any stage of multi-way visual exploration (a-d) with interactive visual grouping over samples, AOIs, and TWIs, and move between them (a-d).
+![Multiple coordinated views: Density maps and visual metrics](images/interactive_visual_aggregation_group_level_visualizations.PNG)
+
+### Data management panel: sample group/AOI group/TWI group
+
+### Linking and brushing 
+
+between metric panel and spatial/temporal views
+
+between matrix relationships and spatial/termporal views)
+AOI-AOI transitions
+
+### Small multiples (minimaps)
+fixation overlap matrix/visual metrics in matrix
+
+![fixation overlap matrix/statistics](images/density_overlap_aoi_stat.png)
+
+![fixation overlap matrix/statistics](images/density_overlap_aoi_minimap.png)
+
+density map matrix
+
+### Resizable GUIs
+GUI is flexible in adjusting the size of each canvas for analysts' specific analytical needs. 
+![GUI is flexible in adjusting the size of each canvas for analysts' specific analytical needs.](images/resizable_guis.png)
+
+### Export metrics for post-analysis
+
+samples-AOIs
+
+sample group-AOIs
+
+time window of interest (TWI)-AOIs
+
+### Matrix reordering
+
+## Example dataset
 
 ## Development
 To run Gazealytics from its source code simply run the following:
@@ -59,8 +144,6 @@ conda install -c conda-forge pocl
 
 This starts a server in development mode at http://localhost:8080/.
 pyopencl is not required unless working with saccade bundling visualisations
-
-## Examples
 
 ## Team 
 The toolkit is developed by:
