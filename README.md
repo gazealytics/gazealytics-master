@@ -34,6 +34,24 @@ Pozdniakov, S., Martinez-Maldonado, R., Tsai, Y. S., Echeverria, V., Srivastava,
   * Python 3.5 or above (web server scripting)
 
 ## Tutorial
+There are some videos for getting started with gazealytics (whose previous release was named as webVETA).
+
+  * The [features video](https://www.youtube.com/watch?v=TihdrjG0B8g&feature=youtu.be) of Gazealytics
+  * The [setup video](https://www.youtube.com/watch?v=-vfOij3I3tc) which describes how to set up AOIs, TWIs, workspace etc
+  * Example use case: [Group-level analysis using AOIs, fixations and Matrix tools](https://www.youtube.com/watch?v=00l1PMzEEx8)
+  * Example use case: [Group-level analysis using scan paths](https://www.youtube.com/watch?v=LcieFoK3kh8)
+
+More details can be found in Gazealytics paper: https://arxiv.org/pdf/2303.17202.pdf
+
+## Features
+Gazealytics implements a list of features/algorithms:
+
+  * [Dispersion-based fixation detection algorithm (I-DT)](https://dl.acm.org/doi/10.1145/355017.355028)
+  * AOI [sequence score](https://arxiv.org/abs/2005.14310); usage: comparing pairwise scanpath similarity by AOI visiting sequence, and string alignment according to
+the [Needleman-Wunsch algorithm](https://www.sciencedirect.com/science/article/pii/0022283670900574)
+  * Interactively achieving more suitable AOI definitions by improving AOI uncertainty metric, e.g., [hit-any-AOI-rate](https://dl.acm.org/doi/pdf/10.1145/3517031.3531166); 
+  * [Saccade bundling](https://ieeexplore.ieee.org/abstract/document/6065028); usage: reduce visual clutter and better reveal scan path patterns  
+  * [Matrix reordering](https://inria.hal.science/hal-01326759/document); usage: reveal visual patterns of fixations, saccades, scanpath based on similarity of individual or their group-level metrics. 
 
 ## Visual analysis examples
 The examples below are meant to showcase Gazealytics's capabilities as a unified and flexible visual eye tracking analytics toolkit. It is ready to be integrated into users' existing data analysis workflow.
@@ -78,7 +96,7 @@ Saccades are classified into short, long, glance types. Saccade filtering is app
 
 ![Saccades can be classified by short, long, glance types; saccade filtering: between AOIs](images/saccade_types_with_saccade_filtering.png)
 
-### spatiotemporal visualization linked with TWI and video
+### Spatiotemporal visualization linked with TWI and video
 Example of Gazealytics GUI layout showing data panel (upper left), spatial panel, video panel, timeline panel, and control panel (right).
 
 Spatiotemporal visualizations can be linked with time-window-of-interests (TWI) and videos. When a specific TWI is chosen, the video will be automatically set to corresponding start time of the selected TWI. 
@@ -143,7 +161,7 @@ conda install -c conda-forge pocl
 ```
 
 This starts a server in development mode at http://localhost:8080/.
-pyopencl is not required unless working with saccade bundling visualisations
+pyopencl is not required unless working with saccade bundling visualizations
 
 ## Team 
 The toolkit is developed by:
@@ -155,6 +173,17 @@ The toolkit is developed by:
 Past developers:
   * Ishwari Bhade (Monash University)
   * Ryan T Whitelock-Jones (Monash University)
+
+Main contributors:
+  * Kun-Ting Chen (University of Stuttgart)
+  * Arnaud Prouzeau (Inria & LaBRI (University of Bordeaux, CNRS, Bordeaux-INP))
+  * Joshua Langmead (Monash University)
+  * Ryan T Whitelock-Jones (Monash University)
+  * Lee Lawrence (Monash University)
+  * Tim Dwyer (Monash University)
+  * Christophe Hurter (ENAC, Université de Toulouse)
+  * Daniel Weiskopf (University of Stuttgart)
+  * Sarah Goodwin (Monash University)
 
 ## License
 Gazealytics is provided under the MIT License.
