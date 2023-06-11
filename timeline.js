@@ -183,8 +183,10 @@ let timelinesketch = (p) => {
 				}else if(TIME_DATA=='all'|| TIME_DATA=='group'){
 					draw_time_all(TimeLine);
 				}else if(TIME_DATA=='saccades'){
-					draw_time_saccades(TimeLine);
-				}		
+					draw_time_saccades(TimeLine);					
+				}else if(TIME_DATA=='saccadetype'){
+					draw_time_saccadetype(TimeLine);
+				}	
 			}
 			p.image(TimeLine, 200, 0);
 			// Time Endvalue labels
@@ -237,7 +239,7 @@ let timelinesketch = (p) => {
 					p.text( format_time(data.tmin/1000), 30, p.height-p.textAscent()); // draws start/end times
 					p.text( format_time(data.tmax/1000), p.width-30 - p.textWidth(format_time(data.tmax/1000)), p.height-p.textAscent());
 				}
-			}else if(TIME_DATA=='data' || TIME_DATA=='all' || TIME_DATA=='group' || TIME_DATA=='saccades'){
+			}else if(TIME_DATA=='data' || TIME_DATA=='all' || TIME_DATA=='group' || TIME_DATA=='saccades' || TIME_DATA=='saccadetype'){
 				TIMELINE_CANVAS.num_of_rows = 0;
 				let toi_longest_duration = 0;
 				let k2 = VALUED.indexOf(selected_data);
@@ -334,7 +336,9 @@ let timelinesketch = (p) => {
 							p.textFont('Arial',16);
 							if(p.textAscent(s)<d){
 								p.text(s.substring(0,9), 4, h+p.textAscent()+(.1*d));
-								p.text(twi_id < 0 ? "" : base_twis[twi_id].name.substring(0,9), 104, h+p.textAscent()+(.1*d));
+								// p.text(twi_id < 0 ? "" : base_twis[twi_id].name.substring(0,9), 104, h+p.textAscent()+(.1*d));
+								if(p.textAscent(s)<d){p.text( format_time(data.tois[w].tmin/1000), 104, h+p.textAscent()+(.1*d));}
+								
 								if( VALUED.indexOf(selected_data) == k && TOGGLE_GREEN_BOX_HIGHLIGHTS){
 									//green box
 									p.strokeWeight(1); 
@@ -1039,6 +1043,180 @@ let draw_time_all = (canvas) => {
 			canvas.text("There is no TWI of the selected sample. Please select\n a valid sample under 'Samples' and TWI under 'TWIs'.", canvas.width/2, canvas.height/2);
 			return;
 		}
+	}
+};
+
+let draw_time_saccadetype = (canvas) => {
+	canvas.fill(black(100)); canvas.noStroke(); canvas.rect(0, 0, canvas.width, canvas.height); canvas.strokeWeight(1);
+	let l = undefined; if(selected_lens !=-1){ l = base_lenses[selected_lens]; }
+	console.log(" @@draw_time_saccadetype");
+	if(VALUED.length == 0){
+	}else{
+		//if selected is TWI group, only show TWIs matching the TWI group
+		//calculate total number of rows
+		TIMELINE_CANVAS.num_of_rows = 0;
+		let h2 = 0;
+		let h2top = 0;
+		let toi_longest_duration = 0;
+		let k2 = VALUED.indexOf(selected_data);
+		let k2_row_num = 0;
+		let num_rows_of_selected_data = 0;
+
+		for(let k=0; k<VALUED.length; k++){
+			let data = DATASETS[VALUED[k]]; 
+
+			if(data == undefined || !data.included)
+				continue;
+			if(DAT_MODE == 1 && data.group != selected_grp)
+				continue;
+			else if(DAT_MODE == 2 && VALUED[k] != selected_data)
+				continue;
+
+			for(let w=0; w<data.tois.length; w++){
+				if(data.tois[w] != undefined && data.tois[w].included) {
+					let twi_id = data.tois[w].twi_id;
+
+					if(TWI_MODE == 2 && selected_twi != -1 && data.tois[w] != undefined && data.tois[w].included) {
+						if(twi_id == selected_twi && twi_id < base_twis.length && base_twis[twi_id].included && base_twis[twi_id].checked) {
+							toi_longest_duration = Math.max(toi_longest_duration, data.tois[w].tmax - data.tois[w].tmin);
+							TIMELINE_CANVAS.num_of_rows++;
+						}
+						if(k == k2)
+							num_rows_of_selected_data++;
+					}else if(TWI_MODE == 1 && selected_twigroup != -1){
+						if(data.tois[w].included && twi_id < base_twis.length && base_twis[twi_id].group == selected_twigroup && base_twis[twi_id].included && base_twis[twi_id].checked ) {
+							toi_longest_duration = Math.max(toi_longest_duration, data.tois[w].tmax - data.tois[w].tmin);
+							TIMELINE_CANVAS.num_of_rows++;
+						}						
+						if(k == k2)
+							num_rows_of_selected_data++;
+					}else if(TWI_MODE == 0){
+						// console.log("sample "+VALUED[k]+", VALUED.length: "+VALUED.length+", data.tois["+w+"].included: "+data.tois[w].included+", twi_id: "+twi_id);
+						if(data.tois[w].included && twi_id < base_twis.length && base_twis[twi_id].included && base_twis[twi_id].checked ) {
+							toi_longest_duration = Math.max(toi_longest_duration, data.tois[w].tmax - data.tois[w].tmin);
+							TIMELINE_CANVAS.num_of_rows++;
+						}
+						if(k == k2)
+							num_rows_of_selected_data++;
+					}
+				}
+			}
+		}
+		
+		if(TIMELINE_CANVAS.num_of_rows > 0) {
+			h2 = canvas.height/TIMELINE_CANVAS.num_of_rows; 			
+
+			for(let k=0, row=0; k<VALUED.length && row<TIMELINE_CANVAS.num_of_rows; k++){
+				let data = DATASETS[VALUED[k]]; 
+	
+				if(data == undefined || !data.included)
+					continue;
+				if(DAT_MODE == 1 && data.group != selected_grp)
+					continue;
+				else if(DAT_MODE == 2 && VALUED[k] != selected_data)
+					continue;
+	
+				for(let w=0; w<data.tois.length && row<TIMELINE_CANVAS.num_of_rows; w++){
+					let bFilteredIn = false;
+					if(data.tois[w] != undefined && data.tois[w].included) {
+						let twi_id = data.tois[w].twi_id;					
+						if(TWI_MODE == 2 && selected_twi != -1 && data.tois[w] != undefined && data.tois[w].included) {
+							if(twi_id == selected_twi && twi_id < base_twis.length && base_twis[twi_id].included && base_twis[twi_id].checked) {
+								bFilteredIn = true;
+								
+								if(k2_row_num == 0 && k2 == k)
+									k2_row_num = row;
+							}
+						}else if(TWI_MODE == 1 && selected_twigroup != -1){
+							if(data.tois[w].included && twi_id < base_twis.length && base_twis[twi_id].group == selected_twigroup && base_twis[twi_id].included && base_twis[twi_id].checked ) {
+								bFilteredIn = true;
+	
+								if(k2_row_num == 0 && k2 == k)
+									k2_row_num = row;
+							}						
+						}else if(TWI_MODE == 0){
+							if(data.tois[w].included && twi_id < base_twis.length && base_twis[twi_id].included && base_twis[twi_id].checked ) {
+								bFilteredIn = true;
+	
+								if(k2_row_num == 0 && k2 == k)
+									k2_row_num = row;
+							}
+						}
+					}
+					if(bFilteredIn) {
+						h2top = h2*row;		
+						toi = data.tois[ w ];
+						// if(VALUED[k]>=0 && v<DATASETS.length && DATASETS[VALUED[k]].initialised  && DATASETS[VALUED[k]].checked){
+						
+						//find out tmax and tmin of TWIs of this sample
+						if( !USE_RELATIVE ){ toi_longest_duration = (toi.tmax-toi.tmin); }
+						// grey backing layer
+						if(data.fixs.length == 0){
+							continue;					
+						}
+						for(let j = toi.j_min; j < toi.j_max; j++){
+							if(data.fixs[j] != undefined && (data.fixs[j].t - toi.tmin)/toi_longest_duration < TIME_ANIMATE) {
+								
+								let ts = 0;
+								if(data.fixs[j].t > toi.tmin)
+									ts = (canvas.width*(data.fixs[j].t - toi.tmin))/toi_longest_duration;
+								let td = (canvas.width*data.fixs[j].dt)/toi_longest_duration;
+								if(td > 1){
+									canvas.fill(grey(100)); canvas.noStroke(); //canvas.stroke(white(100));
+									canvas.rect(ts, h2top, td, h2);
+								}else{
+									canvas.stroke(grey(100)); canvas.noFill(); //canvas.stroke(white(100));
+									canvas.line(ts, h2top, ts, h2top+h2);
+								}
+							}					
+						}
+						console.log(" @@2draw_time_saccadetype");
+						// colours
+						for(let j = toi.j_min, seq=0; j < toi.j_max; j++, seq++){
+							if(data.fixs[j] != undefined && (data.fixs[j].t - toi.tmin)/toi_longest_duration < TIME_ANIMATE){
+								let ts = 0;
+								if(data.fixs[j].t > toi.tmin)
+									ts = (canvas.width*(data.fixs[j].t - toi.tmin))/toi_longest_duration;
+								let td = (canvas.width*data.fixs[j].dt)/toi_longest_duration;
+								
+								if(td > 1){
+									if( j > 0 && data.sacs[j-1] != undefined && data.sacs[j-1].filter ){
+										for(let splat=0; splat<coef_splat.length; splat++){
+											if(coef_splat[splat] > 0){
+												if(data.sacs[j-1].length < SHORT_LENGTH){ canvas.fill(sacc_short(coef_weight[splat]));}
+												else if(data.sacs[j-1].glance){ canvas.fill(sacc_glance(coef_weight[splat] ));}
+												else{ canvas.fill( sacc_basic(coef_weight[splat] )); }
+
+												canvas.noStroke();
+												canvas.rect(ts, h2top, td, h2);
+											}
+										}
+									}									
+								}else{
+									canvas.stroke(grey(100)); canvas.noFill(); //canvas.stroke(white(100));
+									canvas.line(ts, h2top, ts, h2top+h2);
+								}
+							}					
+						}
+						row++;
+						// }
+					}	
+				}
+			}
+		}
+		else {
+			canvas.background(0,0,0);
+			canvas.stroke(grey(100)); 
+			canvas.noFill(); 
+			canvas.strokeWeight(0);
+			canvas.rect(0,0,canvas.width,canvas.height);
+			canvas.fill(white(100));
+			canvas.textFont("Arial"); 
+			canvas.textSize(18);
+			canvas.textAlign( canvas.CENTER );
+			canvas.text("There is no TWI of the selected sample. Please select\n a valid sample under 'Samples' and TWI under 'TWIs'.", canvas.width/2, canvas.height/2);
+			return;
+		}				
 	}
 };
 

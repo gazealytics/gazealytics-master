@@ -442,7 +442,13 @@ let draw_fixs_by_twi = (canvas, data, group, twi, fixs) => {
 			let size = Math.exp(FIX_SIZE);
 			if(FIXS_SATURATION && legval == -1 || legval == group-1) {
 				let val = 75.5*seq/max_val + 30.0; //interpolation of transparency (saliency) in desired alpha range (30.0, 105.5)  
-				canvas.fill( cy(val, group)); canvas.noStroke();
+				canvas.noStroke();
+				if(seq == 0)
+					canvas.fill( cy(105.5, 5)); 
+				else if(seq == max_val)
+					canvas.fill( cy(val, 14)); 			 
+				else
+					canvas.fill( cy(val, group)); 
 			}
 			else {
 				canvas.fill(cy(100*Math.exp(FIX_ALPHA), group)); canvas.noStroke();
@@ -725,7 +731,7 @@ let draw_saccade_by_twi = (canvas, sacs, data, group, toi, longest_duration, new
 					canvas.noFill(); canvas.strokeWeight(coef_splat[splat]);
 					if(COLOUR_MODE == "group"){ 
 						if(SACC_SATURATION && legval == -1 || legval == group-1) {
-							canvas.strokeWeight(6);							
+							canvas.strokeWeight(3);							
 							let val = 25.5*seq/max_val + 3.0; //interpolation of transparency (saliency) in desired alpha range (3.0, 25.5)  
 							canvas.stroke( cy(val, group)); 
 						}
@@ -754,7 +760,7 @@ let draw_saccade_by_twi = (canvas, sacs, data, group, toi, longest_duration, new
 			return;
 		}
 		let textsize = 20 * (FIX_SIZE + 3) / 6 + 10; //interpolation of textsize in desired text size (10, 30) from FIX_SIZE in (-3, 3) 
-		textsize -= 5;
+		// textsize -= 5;
 		for(let j = toi.j_min, seq=0; j<toi.j_max && (data.fixs[j].t - toi.tmin)/longest_duration < TIME_ANIMATE; j++,seq++){
 			if(data.fixs[j] != undefined && (data.fixs[j].t - toi.tmin)/longest_duration < TIME_ANIMATE){				
 	
@@ -763,7 +769,15 @@ let draw_saccade_by_twi = (canvas, sacs, data, group, toi, longest_duration, new
 					canvas.strokeWeight(0);
 					canvas.fill(black(100));
 					canvas.textSize(textsize);
-					canvas.text( num_format(seq, 2), data.fixs[j].x * pos_ratio + ground_x-7, data.fixs[j].y * pos_ratio + ground_y+7);
+					if(max_val <= 10){
+						if(seq%2 == 0) {
+							canvas.text( num_format(seq, 2), data.fixs[j].x * pos_ratio + ground_x-7, data.fixs[j].y * pos_ratio + ground_y+7);
+						}
+					}						
+					else if(seq%5 == 0 || seq+1 == toi.j_max)
+						canvas.text( num_format(seq, 2), data.fixs[j].x * pos_ratio + ground_x-7, data.fixs[j].y * pos_ratio + ground_y+7);
+					console.log("text size: "+textsize+", data.fixs_size: "+FIX_SIZE);
+					canvas.textSize(f.fontSize);
 					canvas.strokeWeight(1);				
 				}				
 			}

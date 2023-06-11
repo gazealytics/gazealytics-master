@@ -250,6 +250,8 @@ function compute_toi_metrics(data_id, toi_id){
 		// add to lense group
 		for(let l=0; l<ORDERLENSEGROUPIDARRAYINDEX.length; l++) {
 			for(let l2=0; l2<lenses.length; l2++){
+				if(LENSEGROUPS[ORDERLENSEGROUPIDARRAYINDEX[l]] == undefined || LENSEGROUPS[ORDERLENSEGROUPIDARRAYINDEX[l]] == null)
+					console.log("ORDERLENSEGROUPIDARRAYINDEX: "+ORDERLENSEGROUPIDARRAYINDEX+", ORDERLENSEGROUPIDARRAYINDEX["+l+"]="+ORDERLENSEGROUPIDARRAYINDEX[l]+"; LENSEGROUPS: "+LENSEGROUPS.map(x=> x.group));
 				if(LENSEGROUPS[ORDERLENSEGROUPIDARRAYINDEX[l]] != undefined && lenses[l2].group == LENSEGROUPS[ORDERLENSEGROUPIDARRAYINDEX[l]].group && lenses[l2].inside(fixs[j].x, fixs[j].y)){
 					toi.lensegroup_lenscount[l] += 1;
 					toi.lensegroup_lenstime[l] += fixs[j].dt;
@@ -738,10 +740,14 @@ let aggregate_aoi_transition_metrics = (aoi_data, toi) => {
 		for(l2=0;l2<=lenses.length;l2++){
 			if(toi.direct_transitions == undefined) continue;
 
-			aoi_data.direct_transitions[l1][l2] += toi.direct_transitions[l1][l2];
+			if(toi.direct_transitions[l1][l2] != undefined)
+				aoi_data.direct_transitions[l1][l2] += toi.direct_transitions[l1][l2];
 			aoi_data.indirect_transitions[l1][l2] += toi.indirect_transitions[l1][l2];
 			for(l3=0;l3<=lenses.length;l3++){
-				aoi_data.triples[l1][l2][l3] += toi.triples[l1][l2][l3];
+				if(toi.triples[l1][l2] == undefined) 
+					console.log("toi: "+base_twis[toi.twi_id].name+", toi.triples: "+toi.triples+", toi.triples["+l1+"]["+l2+"], aoi_data.triples[l1][l2]: "+aoi_data.triples[l1][l2]);
+				else
+					aoi_data.triples[l1][l2][l3] += toi.triples[l1][l2][l3];
 			}
 		}
 	}
@@ -752,7 +758,8 @@ let aggregate_aoi_transition_metrics = (aoi_data, toi) => {
 			aoi_data.lensegroup_direct_transitions[l1][l2] += toi.lensegroup_direct_transitions[l1][l2];
 			aoi_data.lensegroup_indirect_transitions[l1][l2] += toi.lensegroup_indirect_transitions[l1][l2];
 			for(l3=0;l3<=LENSEGROUPS.length;l3++){
-				aoi_data.lensegroup_triples[l1][l2][l3] += toi.lensegroup_triples[l1][l2][l3];
+				if(toi.lensegroup_triples[l1][l2] != undefined) 
+					aoi_data.lensegroup_triples[l1][l2][l3] += toi.lensegroup_triples[l1][l2][l3];
 			}
 		}
 	}

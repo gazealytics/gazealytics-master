@@ -1137,6 +1137,12 @@ let delete_video = () => {
 	}
 }
 
+let getTimstamp = () => {
+	//set toi timestamp
+
+	console.log("current time: "+currentVideoObj.time()+", duration: "+currentVideoObj.duration());
+};
+
 let toggleVid = () => {
 	if (playing) {
 	  currentVideoObj.pause();

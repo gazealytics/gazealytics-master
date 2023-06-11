@@ -836,9 +836,10 @@ function click_time(val){
 	if( (TIME_DATA=='data') != document.getElementById('timedata').classList.value.includes('toggle-on') ){ document.getElementById('timedata').classList.toggle('toggle-on') ; }
 	if( (TIME_DATA=='lens') != document.getElementById('timelens').classList.value.includes('toggle-on') ){ document.getElementById('timelens').classList.toggle('toggle-on') ; }
 	if( (TIME_DATA=='saccades') != document.getElementById('timesaccades').classList.value.includes('toggle-on') ){ document.getElementById('timesaccades').classList.toggle('toggle-on') ; }
+	if( (TIME_DATA=='saccadetype') != document.getElementById('timesaccadetype').classList.value.includes('toggle-on') ){ document.getElementById('timesaccadetype').classList.toggle('toggle-on') ; }	
 	if( (TIME_DATA=='all') != document.getElementById('timeall').classList.value.includes('toggle-on') ){ document.getElementById('timeall').classList.toggle('toggle-on') ; }
 	if( (TIME_DATA=='group') != document.getElementById('timegroup').classList.value.includes('toggle-on') ){ document.getElementById('timegroup').classList.toggle('toggle-on') ; }
-	update_lens_colors()
+	update_lens_colors();
 	timeline_changed = true;
 }
 function click_relativetime(){

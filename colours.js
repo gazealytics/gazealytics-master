@@ -215,7 +215,7 @@ function make_dynamic_legend(){
 		if( htmlvalue != dl.innerHTML ){ dl.innerHTML = htmlvalue; }
 	}else if( SHOW_SACCADE && COLOUR_MODE=="type" ){
 		let htmlvalue = "<tr> <th style='height:15px;width:15px;background-color:"+SACC_TYPES[0]+"' onmousedown='setleg(30)'></th> <th> Short Saccades ("+occ_type[0]+") </th> </tr>";
-		htmlvalue += "<tr> <th style='height:15px;width:15px;background-color:"+SACC_TYPES[1]+"' onmousedown='setleg(31)'></th> <th> Basic Saccades ("+occ_type[1]+") </th> </tr>";
+		htmlvalue += "<tr> <th style='height:15px;width:15px;background-color:"+SACC_TYPES[1]+"' onmousedown='setleg(31)'></th> <th> Long Saccades ("+occ_type[1]+") </th> </tr>";
 		htmlvalue += "<tr> <th style='height:15px;width:15px;background-color:"+SACC_TYPES[2]+"' onmousedown='setleg(32)'></th> <th> Glance Saccades ("+occ_type[2]+") </th> </tr>";
 		htmlvalue = "<table onmouseexit='setleg(-1)'>" + htmlvalue + "</table>";
 		if( htmlvalue != tl.innerHTML ){ tl.innerHTML = htmlvalue; }

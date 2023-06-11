@@ -861,8 +861,13 @@ function cluster_dataset(data){ // clusters raw data into a fixation list
 			let fix = null;
 
 			while(i < data.t.length){
-				while( ((data.x[i] == 0 && data.y[i] == 0) || (data.x[i] <= 0 || data.x[i] >= WIDTH) || (data.y[i] <= 0 || data.y[i] >= HEIGHT) || (Number.isNaN(data.x[i]) || Number.isNaN(data.y[i]))) && i < data.t.length){ 
+				let data_x = (data.x[i] *SCALE_X)- offset_xdata;
+				let data_y = (data.y[i] *SCALE_Y)- offset_ydata;
+				while( ((data_x == 0 && data_y == 0) || (data_x <= 0 || data_x >= WIDTH) || (data_y <= 0 || data_y >= HEIGHT) || (Number.isNaN(data_x) || Number.isNaN(data_y))) && i < data.t.length){ 
+					// while(!window_points.isEmpty()) {window_points.dequeue();}
 					i += 1; 
+					data_x = (data.x[i] *SCALE_X)- offset_xdata;
+					data_y = (data.y[i] *SCALE_Y)- offset_ydata;
 				}
 				if(i >= data.t.length)
 					break;
@@ -877,14 +882,18 @@ function cluster_dataset(data){ // clusters raw data into a fixation list
 				}
 				else {
 					while( i < data.t.length && (data.t[i] - data.t[start] < min_time) ){
+
+						let data_x = (data.x[i] *SCALE_X)- offset_xdata;
+						let data_y = (data.y[i] *SCALE_Y)- offset_ydata;
+
 						//insert valid gaze point into window_points
-						if((data.x[i] == 0 && data.y[i] == 0)!= true && 
-							((data.x[i] <= 0 || data.x[i] >= WIDTH) || (data.y[i] <= 0 || data.y[i] >= HEIGHT))!=true
-								&& !Number.isNaN(data.x[i]) && !Number.isNaN(data.y[i])) {
-							if(max_x < data.x[i]) max_x = data.x[i];
-							if(min_x > data.x[i]) min_x = data.x[i];
-							if(max_y < data.y[i]) max_y = data.y[i];
-							if(min_y > data.y[i]) min_y = data.y[i];
+						if((data_x == 0 && data_y == 0)!= true && 
+							((data_x <= 0 || data_x >= WIDTH) || (data_y <= 0 || data_y >= HEIGHT))!=true
+								&& !Number.isNaN(data_x) && !Number.isNaN(data_y)) {
+							if(max_x < data_x) max_x = data_x;
+							if(min_x > data_x) min_x = data_x;
+							if(max_y < data_y) max_y = data_y;
+							if(min_y > data_y) min_y = data_y;
 							window_points.enqueue(new Node({"pointIndex": i}));										
 						}
 						i += 1;				
@@ -904,19 +913,22 @@ function cluster_dataset(data){ // clusters raw data into a fixation list
 						//Step 3: Determine fixation based on window_points
 						while(j <= tail){
 
+							let data_x = (data.x[j] *SCALE_X)- offset_xdata;
+							let data_y = (data.y[j] *SCALE_Y)- offset_ydata;
+
 							//check if this is a valid gaze point
-							if((data.x[j] == 0 && data.y[j] == 0)!= true && 
-							((data.x[j] <= 0 || data.x[j] >= WIDTH) || (data.y[j] <= 0 || data.y[j] >= HEIGHT))!=true
-								&& !Number.isNaN(data.x[j]) && !Number.isNaN(data.y[j])) {
+							if((data_x == 0 && data_y == 0)!= true && 
+							((data_x <= 0 || data_x >= WIDTH) || (data_y <= 0 || data_y >= HEIGHT))!=true
+								&& !Number.isNaN(data_x) && !Number.isNaN(data_y)) {
 
 									if(fix == null && j + 1 < data.t.length) {			
-										fix = {x: ((data.x[j] *SCALE_X)- offset_xdata), y: ((data.y[j] *SCALE_Y)- offset_ydata), t: data.t[j], dt: (data.t[j+1] - data.t[j]),
+										fix = {x: (data_x), y: (data_y), t: data.t[j], dt: (data.t[j+1] - data.t[j]),
 											real_t_start: 0, real_t_end: 0, cumul_t_start: 0, cumul_t_end: 0 };
 									}	
 									else if(j + 1 < data.t.length){
 										ddt = data.t[j+1] - data.t[j];
-										fix.x = (fix.dt*fix.x + ((data.x[j] *SCALE_X)- offset_xdata)*ddt ) / (fix.dt + ddt);
-										fix.y = (fix.dt*fix.y + ((data.y[j] *SCALE_Y)- offset_ydata)*ddt ) / (fix.dt + ddt);
+										fix.x = (fix.dt*fix.x + (data_x)*ddt ) / (fix.dt + ddt);
+										fix.y = (fix.dt*fix.y + (data_y)*ddt ) / (fix.dt + ddt);
 										fix.dt += ddt;
 									}
 							}
@@ -925,22 +937,25 @@ function cluster_dataset(data){ // clusters raw data into a fixation list
 						//Step 4: Add additional points to the window until dispersion > threshold
 						while( i < data.t.length ){
 
+							let data_x = (data.x[i] *SCALE_X)- offset_xdata;
+							let data_y = (data.y[i] *SCALE_Y)- offset_ydata;
+							
 							//insert valid gaze point into window_points
-							if((data.x[i] == 0 && data.y[i] == 0)!= true && 
-								((data.x[i] <= 0 || data.x[i] >= WIDTH) || (data.y[i] <= 0 || data.y[i] >= HEIGHT))!=true
-									&& !Number.isNaN(data.x[i]) && !Number.isNaN(data.y[i])) {
-								if(max_x < data.x[i]) max_x = data.x[i];
-								if(min_x > data.x[i]) min_x = data.x[i];
-								if(max_y < data.y[i]) max_y = data.y[i];
-								if(min_y > data.y[i]) min_y = data.y[i];
+							if((data_x == 0 && data_y == 0)!= true && 
+								((data_x <= 0 || data_x >= WIDTH) || (data_y <= 0 || data_y >= HEIGHT))!=true
+									&& !Number.isNaN(data_x) && !Number.isNaN(data_y)) {
+								if(max_x < data_x) max_x = data_x;
+								if(min_x > data_x) min_x = data_x;
+								if(max_y < data_y) max_y = data_y;
+								if(min_y > data_y) min_y = data_y;
 
 								//check if dispersion of window points <= dispersion threshold 
 								if((max_x - min_x + max_y - min_y) < max_dist) {
 									//Note a fixation
 									if(i + 1 < data.t.length){
 										ddt = data.t[i+1] - data.t[i];
-										fix.x = (fix.dt*fix.x + ((data.x[i] *SCALE_X)- offset_xdata)*ddt ) / (fix.dt + ddt);
-										fix.y = (fix.dt*fix.y + ((data.y[i] *SCALE_Y)- offset_ydata)*ddt ) / (fix.dt + ddt);
+										fix.x = (fix.dt*fix.x + (data_x)*ddt ) / (fix.dt + ddt);
+										fix.y = (fix.dt*fix.y + (data_y)*ddt ) / (fix.dt + ddt);
 										fix.dt += ddt;
 										window_points.enqueue(new Node({"pointIndex": i}));										
 									}									
@@ -974,11 +989,14 @@ function cluster_dataset(data){ // clusters raw data into a fixation list
 
 					max_x = -1; min_x = Number.MAX_VALUE; max_y = -1; min_y = Number.MAX_VALUE;
 
+					let data_x = (data.x[j] *SCALE_X)- offset_xdata;
+					let data_y = (data.y[j] *SCALE_Y)- offset_ydata;
+
 					while(j <= tail){
-						if(max_x < data.x[j]) max_x = data.x[j];
-						if(min_x > data.x[j]) min_x = data.x[j];
-						if(max_y < data.y[j]) max_y = data.y[j];
-						if(min_y > data.y[j]) min_y = data.y[j];
+						if(max_x < data_x) max_x = data_x;
+						if(min_x > data_x) min_x = data_x;
+						if(max_y < data_y) max_y = data_y;
+						if(min_y > data_y) min_y = data_y;
 						j+=1;
 					}
 				}
@@ -998,8 +1016,12 @@ function cluster_dataset(data){ // clusters raw data into a fixation list
 			let fix = null;
 
 			while(i < data.t.length){
-				while( ((data.x[i] == 0 && data.y[i] == 0) || (data.x[i] <= 0 || data.x[i] >= WIDTH) || (data.y[i] <= 0 || data.y[i] >= HEIGHT) || (Number.isNaN(data.x[i]) || Number.isNaN(data.y[i]))) && i < data.t.length){ 
+				let data_x = (data.x[i] *SCALE_X)- offset_xdata;
+				let data_y = (data.y[i] *SCALE_Y)- offset_ydata;
+				while( ((data_x == 0 && data_y == 0) || (data_x <= 0 || data_x >= WIDTH) || (data_y <= 0 || data_y >= HEIGHT) || (Number.isNaN(data_x) || Number.isNaN(data_y))) && i < data.t.length){ 
 					i += 1; 
+					data_x = (data.x[i] *SCALE_X)- offset_xdata;
+					data_y = (data.y[i] *SCALE_Y)- offset_ydata;
 				}
 				if(i >= data.t.length)
 					break;
@@ -1015,14 +1037,17 @@ function cluster_dataset(data){ // clusters raw data into a fixation list
 				else {
 					while( i < data.t.length && (data.t[i] - data.t[start] < min_time) ){
 
+						let data_x = (data.x[i] *SCALE_X)- offset_xdata;
+						let data_y = (data.y[i] *SCALE_Y)- offset_ydata;
+						
 						//insert valid gaze point into window_points
-						if((data.x[i] == 0 && data.y[i] == 0)!= true && 
-							((data.x[i] <= 0 || data.x[i] >= WIDTH) || (data.y[i] <= 0 || data.y[i] >= HEIGHT))!=true
-								&& !Number.isNaN(data.x[i]) && !Number.isNaN(data.y[i])) {
-							if(max_x < data.x[i]) max_x = data.x[i];
-							if(min_x > data.x[i]) min_x = data.x[i];
-							if(max_y < data.y[i]) max_y = data.y[i];
-							if(min_y > data.y[i]) min_y = data.y[i];
+						if((data_x == 0 && data_y == 0)!= true && 
+							((data_x <= 0 || data_x >= WIDTH) || (data_y <= 0 || data_y >= HEIGHT))!=true
+								&& !Number.isNaN(data_x) && !Number.isNaN(data_y)) {
+							if(max_x < data_x) max_x = data_x;
+							if(min_x > data_x) min_x = data_x;
+							if(max_y < data_y) max_y = data_y;
+							if(min_y > data_y) min_y = data_y;
 							window_points.enqueue(new Node({"pointIndex": i}));										
 						}
 						i += 1;				
@@ -1042,19 +1067,22 @@ function cluster_dataset(data){ // clusters raw data into a fixation list
 						//Step 3: Determine fixation based on window_points
 						while(j <= tail){
 
+							let data_x = (data.x[j] *SCALE_X)- offset_xdata;
+							let data_y = (data.y[j] *SCALE_Y)- offset_ydata;
+							
 							//check if this is a valid gaze point
-							if((data.x[j] == 0 && data.y[j] == 0)!= true && 
-							((data.x[j] <= 0 || data.x[j] >= WIDTH) || (data.y[j] <= 0 || data.y[j] >= HEIGHT))!=true
-								&& !Number.isNaN(data.x[j]) && !Number.isNaN(data.y[j])) {
+							if((data_x == 0 && data_y == 0)!= true && 
+							((data_x <= 0 || data_x >= WIDTH) || (data_y <= 0 || data_y >= HEIGHT))!=true
+								&& !Number.isNaN(data_x) && !Number.isNaN(data_y)) {
 
 									if(fix == null && j + 1 < data.t.length) {			
-										fix = {x: ((data.x[j] *SCALE_X)- offset_xdata), y: ((data.y[j] *SCALE_Y)- offset_ydata), t: data.t[j], dt: (data.t[j+1] - data.t[j]),
+										fix = {x: (data_x), y: (data_y), t: data.t[j], dt: (data.t[j+1] - data.t[j]),
 											real_t_start: 0, real_t_end: 0, cumul_t_start: 0, cumul_t_end: 0 };
 									}	
 									else if(j + 1 < data.t.length){
 										ddt = data.t[j+1] - data.t[j];
-										fix.x = (fix.dt*fix.x + ((data.x[j] *SCALE_X)- offset_xdata)*ddt ) / (fix.dt + ddt);
-										fix.y = (fix.dt*fix.y + ((data.y[j] *SCALE_Y)- offset_ydata)*ddt ) / (fix.dt + ddt);
+										fix.x = (fix.dt*fix.x + (data_x)*ddt ) / (fix.dt + ddt);
+										fix.y = (fix.dt*fix.y + (data_y)*ddt ) / (fix.dt + ddt);
 										fix.dt += ddt;
 										fix.real_t_end = data.t[j];
 										fix.t = cumul;
@@ -1064,23 +1092,25 @@ function cluster_dataset(data){ // clusters raw data into a fixation list
 						}
 						//Step 4: Add additional points to the window until dispersion > threshold
 						while( i < data.t.length ){
-
+							let data_x = (data.x[i] *SCALE_X)- offset_xdata;
+							let data_y = (data.y[i] *SCALE_Y)- offset_ydata;
+							
 							//insert valid gaze point into window_points
-							if((data.x[i] == 0 && data.y[i] == 0)!= true && 
-								((data.x[i] <= 0 || data.x[i] >= WIDTH) || (data.y[i] <= 0 || data.y[i] >= HEIGHT))!=true
-									&& !Number.isNaN(data.x[i]) && !Number.isNaN(data.y[i])) {
-								if(max_x < data.x[i]) max_x = data.x[i];
-								if(min_x > data.x[i]) min_x = data.x[i];
-								if(max_y < data.y[i]) max_y = data.y[i];
-								if(min_y > data.y[i]) min_y = data.y[i];
+							if((data_x == 0 && data_y == 0)!= true && 
+								((data_x <= 0 || data_x >= WIDTH) || (data_y <= 0 || data_y >= HEIGHT))!=true
+									&& !Number.isNaN(data_x) && !Number.isNaN(data_y)) {
+								if(max_x < data_x) max_x = data_x;
+								if(min_x > data_x) min_x = data_x;
+								if(max_y < data_y) max_y = data_y;
+								if(min_y > data_y) min_y = data_y;
 
 								//check if dispersion of window points <= dispersion threshold 
 								if((max_x - min_x + max_y - min_y) < max_dist) {
 									//Note a fixation
 									if(i + 1 < data.t.length){
 										ddt = data.t[i+1] - data.t[i];
-										fix.x = (fix.dt*fix.x + ((data.x[i] *SCALE_X)- offset_xdata)*ddt ) / (fix.dt + ddt);
-										fix.y = (fix.dt*fix.y + ((data.y[i] *SCALE_Y)- offset_ydata)*ddt ) / (fix.dt + ddt);
+										fix.x = (fix.dt*fix.x + (data_x)*ddt ) / (fix.dt + ddt);
+										fix.y = (fix.dt*fix.y + (data_y)*ddt ) / (fix.dt + ddt);
 										fix.dt += ddt;
 										fix.real_t_end = data.t[i];
 										fix.t = cumul;
@@ -1118,11 +1148,14 @@ function cluster_dataset(data){ // clusters raw data into a fixation list
 
 					max_x = -1; min_x = Number.MAX_VALUE; max_y = -1; min_y = Number.MAX_VALUE;
 
+					let data_x = (data.x[j] *SCALE_X)- offset_xdata;
+					let data_y = (data.y[j] *SCALE_Y)- offset_ydata;
+
 					while(j <= tail){
-						if(max_x < data.x[j]) max_x = data.x[j];
-						if(min_x > data.x[j]) min_x = data.x[j];
-						if(max_y < data.y[j]) max_y = data.y[j];
-						if(min_y > data.y[j]) min_y = data.y[j];
+						if(max_x < data_x) max_x = data_x;
+						if(min_x > data_x) min_x = data_x;
+						if(max_y < data_y) max_y = data_y;
+						if(min_y > data_y) min_y = data_y;
 						j+=1;
 					}
 				}

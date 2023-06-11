@@ -7,12 +7,21 @@ class PolyLens{
 		extent(){
 			return [Math.min(...this.x), Math.min(...this.y), Math.max(...this.x), Math.max(...this.y)];
 		}
+		getArea(){
+			//area will be changed when adding new vertex or when the aoi editing is ongoing and vetex is being dragged
+			return calculatePolygonArea(this.x, this.y, this.x.length);
+		}
 		add(xn, yn){
 			this.centx = (this.centx * this.x.length + xn)/(this.x.length + 1);
 			this.centy = (this.centy * this.y.length + yn)/(this.y.length + 1);
 			this.x.push(xn); this.y.push(yn);
+			if(this.getArea == undefined)
+				this.area = calculatePolygonArea(this.x, this.y, this.x.length);//this.getArea();
+			else 
+				this.area = this.getArea();
+				
 			document.getElementById('lens_'+this.id+"_values").innerHTML = this.make_controls();
-		}
+		}		
 		inside(xn, yn){
 			// ray-casting algorithm based on http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
 			xn += OFFSET_X; yn += OFFSET_Y; 
@@ -46,6 +55,10 @@ class PolyLens{
 				this.centx += xdiff; this.centy += ydiff;
 			}
 			document.getElementById('lens_'+this.id+"_values").innerHTML = this.make_controls();
+			if(this.getArea == undefined)
+				this.area = calculatePolygonArea(this.x, this.y, this.x.length);//this.getArea();
+			else 
+				this.area = this.getArea();
 		}
 		draw(proc, building, selected, w, h, disp_w=0, disp_h=0, aspect=true){
 			if(aspect){
@@ -93,6 +106,10 @@ class PolyLens{
 			proc.strokeWeight(0);
 			if(aspect && SHOW_LENSLABEL){proc.text(this.name+", Group "+this.group, disp_w + (this.centx-OFFSET_X) * ratio + gx, disp_h + (this.centy-OFFSET_Y) * ratio + gy);}
 			proc.strokeWeight(1);
+			if(this.area == undefined && this.getArea == undefined)
+				this.area = calculatePolygonArea(this.x, this.y, this.x.length);//this.getArea();
+			else if(this.area == undefined)
+				this.area = this.getArea();
 		}
 		make_controls(){
 			var g = "";
@@ -101,11 +118,12 @@ class PolyLens{
 				g += '<th><input class="num" type="number" onchange="base_lenses['+this.id+'].y['+i+']=parseFloat(this.value);lenses_update()" style="width:80px" value='+this.y[i]+'></th></tr>';
 			}
 			g = "<table>"+g+"</table>";
-			return g
+			return g;
 		}
 		constructor(lid, x1, y1, groupid){
 			this.type = 'poly'; this.id = lid; this.name = lid+''; this.locked = false;
 			this.x = [x1]; this.y = [y1]; this.centx = x1; this.centy = y1; this.group = groupid;
+			this.area = 0;
 		}
 }
 class EllipseLens{
@@ -122,6 +140,27 @@ class EllipseLens{
 			this.fix_up();
 			building_lens_id = -1;
 			document.getElementById('lens_'+this.id+"_values").innerHTML = this.make_controls();
+			
+			if(this.getArea == undefined){
+				let xpoints = [this.x1, this.x2, this.x2, this.x1];
+				let ypoints = [this.y1, this.y1, this.y2, this.y2];
+	
+				this.area = calculatePolygonArea(xpoints, ypoints, xpoints.length);	
+			}
+			else
+				this.area = this.getArea();
+		}
+		getArea(){
+			let xpoints = [this.x1, this.x2, this.x2, this.x1];
+			let ypoints = [this.y1, this.y1, this.y2, this.y2];
+
+			return this.computeArea(xpoints, ypoints);
+		}
+		computeArea = (xpoints, ypoints) => {
+			//area will be changed when adding new vertex or when the aoi editing is ongoing and vetex is being dragged
+			let area = Math.PI * Math.floor(this.xrad) * Math.floor(this.yrad);
+			console.log("area: Math.PI * "+this.xrad+" * "+this.yrad+"="+ Math.PI * this.xrad * this.yrad);
+			return Math.floor(area);
 		}
 		inside(xn, yn){
 			xn += OFFSET_X; yn += OFFSET_Y; 
@@ -140,7 +179,7 @@ class EllipseLens{
 		move(xstart, ystart, xdiff, ydiff){ // controls how the lens can be dragged, both the whole lens and deformations
 			if(this.locked){return;}
 			if(this.x2*this.y2 != 0){ // correct the other properties, if the lens hs been finished
-					  if( this.x2*this.y2 != 0 && Math.abs(xstart - this.x1)*(pos_ratio) < 15 && Math.abs(ystart - this.y1)*(pos_ratio) < 15 ){
+				if( this.x2*this.y2 != 0 && Math.abs(xstart - this.x1)*(pos_ratio) < 15 && Math.abs(ystart - this.y1)*(pos_ratio) < 15 ){
 					this.x1 += xdiff; this.y1 += ydiff;
 				}else if( this.x2*this.y2 != 0 && Math.abs(xstart - this.x2)*(pos_ratio) < 15 && Math.abs(ystart - this.y1)*(pos_ratio) < 15 ){
 					this.x2 += xdiff; this.y1 += ydiff;
@@ -167,6 +206,16 @@ class EllipseLens{
 			}
 			this.fix_up();
 			document.getElementById('lens_'+this.id+"_values").innerHTML = this.make_controls();
+
+			if(this.getArea == undefined){
+				let xpoints = [this.x1, this.x2, this.x2, this.x1];
+				let ypoints = [this.y1, this.y1, this.y2, this.y2];
+	
+				this.area = Math.floor(Math.PI * Math.floor(this.xrad) * Math.floor(this.yrad));
+				// console.log("area: Math.PI * "+this.xrad+" * "+this.yrad+"="+ Math.PI * this.xrad * this.yrad);
+			}
+			else
+				this.area = this.getArea();
 		}
 		draw(proc, building, selected, w, h, disp_w=0, disp_h=0, aspect=true){
 			if(aspect){
@@ -203,7 +252,14 @@ class EllipseLens{
 			proc.strokeWeight(0);
 			if(aspect && SHOW_LENSLABEL){proc.text(this.name+", Group "+this.group, (this.centx-OFFSET_X) * ratio + gx, (this.centy-OFFSET_Y) * ratio + gy)};
 			proc.strokeWeight(1);
-
+			if(this.area == undefined && this.getArea == undefined){
+				let xpoints = [this.x1, this.x2, this.x2, this.x1];
+				let ypoints = [this.y1, this.y1, this.y2, this.y2];
+	
+				this.area = calculatePolygonArea(xpoints, ypoints, xpoints.length);	
+			}
+			else if(this.area == undefined)
+				this.area = this.getArea();
 		}
 		make_controls(){
 			var g = '<tr><th><input class="num" type="number" onchange="base_lenses['+this.id+'].x1=parseFloat(this.value);base_lenses['+this.id+'].fix_up();lenses_update()" style="width:80px" value='+this.x1+'></th>';
@@ -220,13 +276,74 @@ class EllipseLens{
 			this.xrad = 0; this.yrad = 0;
 			this.centx = x1; this.centy = y1;
 			this.group = groupid;
+			this.area = 0;
 		}
 }
 class RectLens extends EllipseLens{
+		computeArea = (xpoints, ypoints) => {
+			//area will be changed when adding new vertex or when the aoi editing is ongoing and vetex is being dragged
+			let area = calculatePolygonArea(xpoints, ypoints, xpoints.length);			
+			return area;
+		}
+		add(xn, yn){
+			this.x2 = xn; this.y2 = yn;
+			this.fix_up();
+			building_lens_id = -1;
+			document.getElementById('lens_'+this.id+"_values").innerHTML = this.make_controls();
+			
+			if(this.getArea == undefined){
+				let xpoints = [this.x1, this.x2, this.x2, this.x1];
+				let ypoints = [this.y1, this.y1, this.y2, this.y2];
+	
+				this.area = calculatePolygonArea(xpoints, ypoints, xpoints.length);	
+			}
+			else
+				this.area = this.getArea();
+		}
 		inside(xn, yn){
 			xn += OFFSET_X; yn += OFFSET_Y; 
 			if(this.xrad * this.yrad == 0){return false;}
 			return Math.abs(this.centx - xn) < this.xrad && Math.abs(this.centy - yn) < this.yrad;
+		}
+		move(xstart, ystart, xdiff, ydiff){ // controls how the lens can be dragged, both the whole lens and deformations
+			if(this.locked){return;}
+			if(this.x2*this.y2 != 0){ // correct the other properties, if the lens hs been finished
+				if( this.x2*this.y2 != 0 && Math.abs(xstart - this.x1)*(pos_ratio) < 15 && Math.abs(ystart - this.y1)*(pos_ratio) < 15 ){
+					this.x1 += xdiff; this.y1 += ydiff;
+				}else if( this.x2*this.y2 != 0 && Math.abs(xstart - this.x2)*(pos_ratio) < 15 && Math.abs(ystart - this.y1)*(pos_ratio) < 15 ){
+					this.x2 += xdiff; this.y1 += ydiff;
+				}else if( this.x2*this.y2 != 0 && Math.abs(xstart - this.x1)*(pos_ratio) < 15 && Math.abs(ystart - this.y2)*(pos_ratio) < 15 ){
+					this.x1 += xdiff; this.y2 += ydiff;
+				}else if( this.x2*this.y2 != 0 && Math.abs(xstart - this.x2)*(pos_ratio) < 15 && Math.abs(ystart - this.y2)*(pos_ratio) < 15 ){
+					this.x2 += xdiff; this.y2 += ydiff;
+				}else if( this.x2*this.y2 != 0 && Math.abs(xstart - this.x1)*(pos_ratio) < 15 ){
+					this.x1 += xdiff;
+				}else if( this.x2*this.y2 != 0 && Math.abs(xstart - this.x2)*(pos_ratio) < 15 ){
+					this.x2 += xdiff;
+				}else if( this.x2*this.y2 != 0 && Math.abs(ystart - this.y1)*(pos_ratio) < 15 ){
+					this.y1 += ydiff;
+				}else if( this.x2*this.y2 != 0 && Math.abs(ystart - this.y2)*(pos_ratio) < 15 ){
+					this.y2 += ydiff;
+				}else{
+					this.x1 += xdiff; this.y1 += ydiff;
+					if( this.x2*this.ys != 0){
+						this.x2 += xdiff; this.y2 += ydiff;
+					}
+				}
+			}else{
+				this.x1 += xdiff; this.y1 += ydiff;
+			}
+			this.fix_up();
+			document.getElementById('lens_'+this.id+"_values").innerHTML = this.make_controls();
+
+			if(this.getArea == undefined){
+				let xpoints = [this.x1, this.x2, this.x2, this.x1];
+				let ypoints = [this.y1, this.y1, this.y2, this.y2];
+	
+				this.area = calculatePolygonArea(xpoints, ypoints, xpoints.length);	
+			}
+			else
+				this.area = this.getArea();
 		}
 		draw(proc, building, selected, w, h, disp_w=0, disp_h=0, aspect=true){
 			if(aspect){
@@ -263,6 +380,14 @@ class RectLens extends EllipseLens{
 			proc.strokeWeight(0);
 			if(aspect && SHOW_LENSLABEL){proc.text(this.name+", Group "+this.group, (this.centx-OFFSET_X) * ratio + gx, (this.centy-OFFSET_Y) * ratio + gy)};
 			proc.strokeWeight(1);
+			if(this.area == undefined && this.getArea == undefined){
+				let xpoints = [this.x1, this.x2, this.x2, this.x1];
+				let ypoints = [this.y1, this.y1, this.y2, this.y2];
+	
+				this.area = calculatePolygonArea(xpoints, ypoints, xpoints.length);	
+			}
+			else if(this.area == undefined)
+				this.area = this.getArea();
 
 		}
 		constructor(lid, x1, y1, groupid){
@@ -386,6 +511,8 @@ function select_lens(id){
 	else
 	selected_lensegroup = base_lenses[id].group; 
 	midground_changed = true; timeline_changed=true; matrix_changed = true; SAC_FILTER_CHANGED = true;
+
+	update_lense_mode();
 }
 function delete_lens(id){
 	if( base_lenses[id].locked ){ return; }
@@ -393,7 +520,6 @@ function delete_lens(id){
 	if(r){
 		var elem = document.getElementById('lens_'+id);
 		elem.parentNode.removeChild(elem);
-		// console.log(id, building_lens_id, selected_lens);
 		if(id == building_lens_id){ building_lens_id = -1; }
 		if(id == selected_lens){ selected_lens = -1; }
 		background_changed = true; timeline_changed = true; matrix_changed = true;
@@ -404,9 +530,27 @@ function dragOver_lens(e) {
   val = isBefore(selected, par);
   if (val==1) {
     par.parentNode.insertBefore(selected, par);
-	// console.log(par.id, val.id);
   }
   if(val==-1) {
     par.parentNode.insertBefore(selected, par.nextSibling)
   }
+}
+
+/*
+    * X, Y	Arrays of the x and y coordinates of the vertices, traced in a clockwise direction, starting at any vertex. If you trace them counterclockwise, the result will be correct but have a negative sign.
+    * numPoints	The number of vertices
+    * Returns	the area of the polygon
+    */
+function calculatePolygonArea(X, Y, numPoints) 
+{ 
+	let area = 0;   // Accumulates area 
+	let j = numPoints-1; 
+
+	for (let i=0; i<numPoints; i++)
+	{ 
+		area +=  (Math.floor(X[j])+Math.floor(X[i])) * (Math.floor(Y[j])-Math.floor(Y[i])); 
+		j = i;  //j is previous vertex to i
+	}	
+	area = Math.abs(area/2);
+	return area;
 }

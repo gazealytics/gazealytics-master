@@ -41,7 +41,7 @@ function make_note_dataset_selectors(){
 		id = selector.id.split('_')[0]*1;
 		selector.innerHTML = ""; content = "";
 		for(var j=0; j<DATASETS.length; j++){
-			if(DATASETS[j].initialised && DATASETS[j].should_save){
+			if(DATASETS[j].initialised && DATASETS[j].should_save && DATASETS[j].included){
 				content += "<option value='"+j+"'>"+DATASETS[j].name+"</option>"
 			}
 		}

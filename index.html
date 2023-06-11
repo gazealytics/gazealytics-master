@@ -51,8 +51,9 @@
 			<div class="tool2"><button onclick="document.getElementById('im_f').click()">Load Background</button><span class="tip">Load a context background image</span></div><br >
 			<div class="tool2"><div class="text_pattern">Background Brightness: </div><div id="back_sl" class="slider"></div><span class="tip">Controls Brightness of the background image</span></div><br >
 			<script>noUiSlider.create(document.getElementById('back_sl'),{ start:[0.5], step:0.001, range:{'min':0.01, 'max':0.99} });</script>
+			<div class="text_pattern">Dispersion-based fixation identification (I-DT):</div>
 			<div class="tool2"><div class="text_pattern">Max Cluster Distance:</div> <div id="maxdist_val" style="display:inline-block; padding-bottom:5px">130 pixels</div> <div id="maxdist_sl" class="slider"></div><span class="tip">Controls how far apart consecutive eye-tracking points can be and still be clustered together. Points seperated by a row with coordinates at zero or empty strings will not be clustered.</span></div><br >
-			<script>noUiSlider.create(document.getElementById('maxdist_sl'),{ start:[130], step:0.1, range:{'min':0.0, 'max':200} });</script>
+			<script>noUiSlider.create(document.getElementById('maxdist_sl'),{ start:[130], step:0.1, range:{'min':0.0, 'max':300} });</script>
 			<div class="tool2"><div class="text_pattern">Min Fixation Time: </div><div id="mintime_val" style="display:inline-block; padding-bottom:5px">80.0 ms</div> <div id="mintime_sl" class="slider"></div><span class="tip">Controls how long a cluster must last to be considered a fixation</span></div><br >
 			<script>noUiSlider.create(document.getElementById('mintime_sl'),{ start:[80.0], step:0.1, range:{'min':0.0, 'max':300} });</script>
 			<br>
@@ -226,6 +227,7 @@
 			<button type="button" id="timegroup" class="toggler" onclick="click_time('group');">Coloured Group AOIs</button> <br >
 			<button type="button" id="timelens" class="toggler"  onclick="click_time('lens');">AOI (Group) Sequence</button> <br >
 			<button type="button" id="timesaccades" class="toggler"  onclick="click_time('saccades');">Saccade Sequence</button> <br >
+			<button type="button" id="timesaccadetype" class="toggler"  onclick="click_time('saccadetype');">Saccade Type</button> <br >
 			<button type="button" id="timedata" class="toggler" onclick="click_time('data');">Highlight Selected AOI</button>
 			<span class="tip">Toggles various modes for the timelines: Coloured AOIs (default), AOIs across the Selected Sample, or samples across the Selected AOI. </span></div><br >
 			<br>
@@ -532,12 +534,17 @@
 						<button type="button" id="col_twigroup" class="toggler"			 onclick="mat_col_select('twigroup')">TWI<sub>g</sub></button>
 						<span class="tip">Uses columns in matrix to represent Groupings of Time Windows of Interest within the selected sample</span>
 					</div>					
-					<div class="tool inner_button"><button  onclick="export_matrix()"> <i class="far fa-save"></i> </button><span class="tip">Save the metric values</span></div>
-					<div class="tool inner_button"><button  onclick="export_spatial_canvas()"> <i class="far fa-save"></i> </button><span class="tip">Export the current canvas</span></div>
+					<!-- <div class="tool">
+						<input type="checkbox" id="matrix_summary" checked value="checked" onclick="matrix_changed=true;foreground_changed=true;">
+						<span class="tip">Toggles showing the summary data that is enabled</span>
+					</div> -->
 					<div class="tool">
 						<input type="checkbox" id="matrix_write" onclick="MATRIX_WRITE=this.checked;matrix_redraw=true;">
 						<span class="tip">Toggles showing the exact value in the middle of matrix cells</span>
 					</div>
+					<div class="tool"><button  onclick="export_matrix()"> <i class="far fa-save"></i> </button><span class="tip">Save the metric values</span></div>
+					<div class="tool"><button  onclick="export_spatial_canvas()"> <i class="far fa-save"></i> </button><span class="tip">Export the current canvas</span></div>
+					
 					<div id="grid_num" class="matsel tool">
 						<input type="number" class="num2" id='GRID_N' style='width:40px'value=6 step=1 min=2 max=50 onchange="GRID_N=Math.min(50, Math.max(1, this.value));matrix_changed=true;">
 						<span class="tip">Controls the number of grid cells (N by N) used in grid-based relative density metrics</span>
@@ -573,15 +580,17 @@
 	</div>
 	<div></div>
 	<div class="canvas_box" id="canvas_box">
-		<span style="background-color: aqua; font-size:12; font-family: Arial, sans-serif">Data filtering:</span>
-		<div class="tool" style="display: inline"><button type="button" id="dat_mode" class="toggler toggle-on dat_mode" onclick="click_dat_mode();">All Samples</button><span class="tip">Toggles showing the entire data, selected individual data, or selected group</span></div>
-		<div class="tool" style="display: inline"><button type="button" id="twi_mode" class="toggler toggle-on twi_mode" onclick="click_twi_mode();">All TWIs</button><span class="tip">Toggles showing the entire twi data, selected individual twi, or selected twi group</span></div>
-		<div class="tool" style="display: inline"><button type="button" id="lense_mode" class="toggler toggle-on lense_mode" onclick="click_lense_mode();">Selected AOI Group</button><span class="tip">Toggles showing selected individual AOI, or selected AOI group</span></div>
-		<span style="background-color: yellow; font-size:12; font-family: Arial, sans-serif">Shortcut:</span>
-		<div class="tool" style="display: inline"><button type="button" id="aoi_sequence_shortcut" class="toggler toggle-on dat_mode" onclick="click_shortcut('aoi_sequence_shortcut')">AOI Sequence</button><span class="tip">To open up AOI sequence comparison or transition cosine similarity matrix with AOI (group) sequence timelines</span></div>
-		<div class="tool" style="display: inline"><button type="button" id="saccade_distribution_shortcut" class="toggler toggle-on dat_mode" onclick="click_shortcut('saccade_distribution_shortcut')">Saccade Distribution</button><span class="tip">To see the histogram of saccade length distribution with saccades visualisations</span></div>
-		<div class="tool" style="display: inline"><button type="button" id="aoi_fixation_mode_shortcut" class="toggler toggle-on dat_mode" onclick="click_shortcut('aoi_fixation_mode_shortcut')">Fixation Overlap</button><span class="tip">To see the fixation density overlap comparisons with Coloured AOI (group) timelines</span></div>		
-		<div class="tool" style="display: inline"><button type="button" id="report_mode_shortcut" class="toggler toggle-on dat_mode" onclick="click_shortcut('report_mode_shortcut')">Storytelling</button><span class="tip">To see the gaze replay over timelines, turn on "Fixations" and "Saccades", move the timeline animate slider, click on "Play"</span></div>		
+		<div>
+			<span style="background-color: aqua; font-size:12; font-family: Arial, sans-serif">Data filtering:</span>
+			<div class="tool" style="display: inline"><button type="button" id="dat_mode" class="toggler toggle-on dat_mode" onclick="click_dat_mode();">All Samples</button><span class="tip">Toggles showing the entire data, selected individual data, or selected group</span></div>
+			<div class="tool" style="display: inline"><button type="button" id="twi_mode" class="toggler toggle-on twi_mode" onclick="click_twi_mode();">All TWIs</button><span class="tip">Toggles showing the entire twi data, selected individual twi, or selected twi group</span></div>
+			<div class="tool" style="display: inline"><button type="button" id="lense_mode" class="toggler toggle-on lense_mode" onclick="click_lense_mode();">Selected AOI Group</button><span class="tip">Toggles showing selected individual AOI, or selected AOI group</span></div>
+			<span style="background-color: yellow; font-size:12; font-family: Arial, sans-serif">Shortcut:</span>
+			<div class="tool" style="display: inline"><button type="button" id="aoi_sequence_shortcut" class="toggler toggle-on dat_mode" onclick="click_shortcut('aoi_sequence_shortcut')">AOI Sequence</button><!--span class="tip">To open up AOI sequence comparison or transition cosine similarity matrix with AOI (group) sequence timelines</span--></div>
+			<div class="tool" style="display: inline"><button type="button" id="saccade_distribution_shortcut" class="toggler toggle-on dat_mode" onclick="click_shortcut('saccade_distribution_shortcut')">Saccade Distribution</button><!--span class="tip">To see the histogram of saccade length distribution with saccades visualisations</span--></div>
+			<div class="tool" style="display: inline"><button type="button" id="aoi_fixation_mode_shortcut" class="toggler toggle-on dat_mode" onclick="click_shortcut('aoi_fixation_mode_shortcut')">Fixation Overlap</button><!--span class="tip">To see the fixation density overlap comparisons with Coloured AOI (group) timelines</span--></div>		
+			<!-- <div class="tool" style="display: inline"><button type="button" id="report_mode_shortcut" class="toggler toggle-on dat_mode" onclick="click_shortcut('report_mode_shortcut')">Storytelling</button><span class="tip">To see the gaze replay over timelines, turn on "Fixations" and "Saccades", move the timeline animate slider, click on "Play"</span></div>					 -->
+		</div>
 		<div id="pj1" width="100%" style="margin-bottom: 1px;"></div> 
 		<div id="pj2" width="100%" style="margin: 0px;"></div> 
 	</div>	
