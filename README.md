@@ -165,17 +165,17 @@ pyopencl is not required unless working with saccade bundling visualizations
 
 ## Team 
 The toolkit is developed by:
-  * Kun-Ting Chen (University of Stuttgart)
-  * Joshua Langmead (Monash University)
+  * Kun-Ting Chen (Centre for Research on Engineering Software Technologies, University of Adelaide)
   * Yao Wang (University of Stuttgart)
   * Sarah Goodwin (Monash University)
 
 Past developers:
+  * Joshua Langmead (Monash University)
   * Ishwari Bhade (Monash University)
   * Ryan T Whitelock-Jones (Monash University)
 
 Main contributors:
-  * Kun-Ting Chen (University of Stuttgart)
+  * Kun-Ting Chen (Centre for Research on Engineering Software Technologies, University of Adelaide)
   * Arnaud Prouzeau (Inria & LaBRI (University of Bordeaux, CNRS, Bordeaux-INP))
   * Joshua Langmead (Monash University)
   * Ryan T Whitelock-Jones (Monash University)
