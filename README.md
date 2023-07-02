@@ -27,7 +27,10 @@ Cai, M., Zheng, B., & Demmans Epp, C. (2022, July). Towards Supporting Adaptive 
 
 Chen, K. T., Ngo, Q. Q., Kurzhals, K., Marriott, K., Dwyer, T., Sedlmair, M., & Weiskopf, D. (2023). Reading Strategies for Graph Visualizations that Wrap Around in Torus Topology. arXiv preprint arXiv:2303.17066.
 
-Pozdniakov, S., Martinez-Maldonado, R., Tsai, Y. S., Echeverria, V., Srivastava, N., & Gasevic, D. (2023, March). How Do Teachers Use Dashboards Enhanced with Data Storytelling Elements According to their Data Visualisation Literacy Skills?. In LAK23: 13th International Learning Analytics and Knowledge Conference (pp. 89-99).
+Pozdniakov, S., Martinez-Maldonado, R., Tsai, Y. S., Echeverria, V., Srivastava, N., & Gasevic, D. (2023, March). How Do Teachers Use Dashboards Enhanced with Data Storytelling Elements According to their Data Visualization Literacy Skills?. In LAK23: 13th International Learning Analytics and Knowledge Conference (pp. 89-99).
+
+## Media
+  * Visual eye tracking data analysis using Gazealytics was featured by [Merve Keskin](https://drmervekeskin.wordpress.com/) in [Geomob Podcast - 186. Merve Keskin: Map Usability](https://thegeomob.com/podcast/episode-186) (30:07 - 34:05) in producing more insightful outcomes with straightforward visualizations and interactions than traditional eye tracking data analysis methods.
 
 ## Requirements
   * This repository
@@ -145,7 +148,10 @@ time window of interest (TWI)-AOIs
 
 ### Matrix reordering
 
-## Example dataset
+## Demo datasets
+ * Load previously saved Gazealytics project files by clicking on "Load Project" - [Torus-wrapping graphs](https://arxiv.org/abs/2303.17066): [saved zip file-1](https://osf.io/kwve2), [saved zip file-2](https://osf.io/sc6by) 
+ * Start from importing raw gaze sequence by clicking on "Load .tsv" and "Load background": [.tsv files and reference images](https://osf.io/au3bj/files/osfstorage)
+ * Other saved project files and raw data: [Torus-wrapping graphs](https://osf.io/au3bj/)
 
 ## Development
 To run Gazealytics from its source code simply run the following:
