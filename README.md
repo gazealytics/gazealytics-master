@@ -11,14 +11,15 @@ It supports a flexible interface for integration into analysts' existing workflo
 A live instance can be found at https://www2.visus.uni-stuttgart.de/gazealytics/.
 
 ## Citation
-Chen, K. T., Prouzeau, A., Langmead, J., Whitelock-Jones, R. T., Lawrence, L., Dwyer, T., ... & Goodwin, S. (2023). *Gazealytics: A Unified and Flexible Visual Toolkit for Exploratory and Comparative Gaze Analysis.* arXiv preprint [arXiv:2303.17202](https://arxiv.org/pdf/2303.17202.pdf).
+Chen, K. T., Prouzeau, A., Langmead, J., Whitelock-Jones, R. T., Lawrence, L., Dwyer, T., ... & Goodwin, S. (2023, May). Gazealytics: A Unified and Flexible Visual Toolkit for Exploratory and Comparative Gaze Analysis. In Proceedings of the 2023 Symposium on Eye Tracking Research and Applications (pp. 1-7). Preprint available at [arXiv:2303.17202](https://arxiv.org/pdf/2303.17202.pdf).
 
 Please reference using the reference below:
 
-@article{chen2023gazealytics,
+@inproceedings{chen2023gazealytics,
   title={Gazealytics: A Unified and Flexible Visual Toolkit for Exploratory and Comparative Gaze Analysis},
   author={Chen, Kun-Ting and Prouzeau, Arnaud and Langmead, Joshua and Whitelock-Jones, Ryan T and Lawrence, Lee and Dwyer, Tim and Hurter, Christophe and Weiskopf, Daniel and Goodwin, Sarah},
-  journal={arXiv preprint arXiv:2303.17202},
+  booktitle={Proceedings of the 2023 Symposium on Eye Tracking Research and Applications},
+  pages={1--7},
   year={2023}
 }
 
