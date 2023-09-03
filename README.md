@@ -26,7 +26,7 @@ Please reference using the reference below:
 ## Used by
 Cai, M., Zheng, B., & Demmans Epp, C. (2022, July). Towards Supporting Adaptive Training of Injection Procedures: Detecting Differences in the Visual Attention of Nursing Students and Experts. In Proceedings of the 30th ACM Conference on User Modeling, Adaptation and Personalization (pp. 286-294).
 
-Chen, K. T., Ngo, Q. Q., Kurzhals, K., Marriott, K., Dwyer, T., Sedlmair, M., & Weiskopf, D. (2023). Reading Strategies for Graph Visualizations that Wrap Around in Torus Topology. arXiv preprint arXiv:2303.17066.
+Chen, K. T., Ngo, Q. Q., Kurzhals, K., Marriott, K., Dwyer, T., Sedlmair, M., & Weiskopf, D. (2023, May). Reading Strategies for Graph Visualizations that Wrap Around in Torus Topology. In Proceedings of the 2023 Symposium on Eye Tracking Research and Applications (pp. 1-7).
 
 Pozdniakov, S., Martinez-Maldonado, R., Tsai, Y. S., Echeverria, V., Srivastava, N., & Gasevic, D. (2023, March). How Do Teachers Use Dashboards Enhanced with Data Storytelling Elements According to their Data Visualization Literacy Skills?. In LAK23: 13th International Learning Analytics and Knowledge Conference (pp. 89-99).
 
