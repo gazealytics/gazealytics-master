@@ -1,3 +1,61 @@
+/** General styles **/
+body {
+	font-family: Arial, sans-serif;
+	font-size: 14px;
+	margin: 0;
+}
+
+.inner_button {
+	float:right;
+	padding-left: 3px;
+}
+
+button {
+	padding: 1px 2px;
+	font-family: Arial, sans-serif;
+	font-weight: bold;
+}
+
+.data_pane_button {
+	float:right;
+}
+
+.text_pattern {
+	padding-top: 5px;
+	padding-bottom: 5px;
+}
+
+.shortcut_row {
+	margin-left: 1%;
+}
+
+.help_button_float {
+	margin-left: auto;
+}
+
+.spatial_header_row {
+	display: flex;
+	width: 100%;
+	gap: 8px;
+	align-items: center;
+}
+
+.spatial_header_row .tool {
+	width: auto;
+}
+
+.export_action_row {
+	text-align: center;
+	margin-top: 10px;
+}
+
+.section_heading {
+	font-size: 16px;
+	font-weight: bold;
+	text-align: center;
+}
+
+/** Tooltip styles **/
 
 .tool {
   position: relative;
@@ -5,6 +63,7 @@
   width: inherit;
   font-family: Arial, sans-serif;
   font-size: 14px;
+  margin-bottom: 2px;
 }
 .tool2 {
   position: relative;
@@ -14,22 +73,6 @@
   font-size: 14px;
 }
 
-.inner_button {
-	float:right;
-	padding-left: 3px;
-}
-
-.data_pane_button {
-	float:right;
-}
-button {
-	padding: 1px 2px;
-	font-family: Arial, sans-serif;
-}
-.text_pattern {
-	padding-top: 5px;
-	padding-bottom: 5px;
-}
 .tool .tip, .tool2 .tip {
 	width: auto;
 	top: 100%;
@@ -46,16 +89,37 @@ button {
 	z-index: 2;
 }
 
+.tool.section_help_icon .tip {
+	left: auto;
+	right: 0;
+	margin-left: 0;
+}
+
+.tooltip {
+	position: absolute;
+	padding: 10px 10px;
+	color: black;
+	background-color: white;
+	border-radius: 5px;
+	font-size: 14px;
+	font-weight: bold;
+	visibility: hidden;
+	opacity: 0;
+	transition: opacity 0.3s;
+	z-index: 1000;
+}
+
 .interface_layout {
+	padding-top: 0.5%;
 	margin: 0;
 	display: grid;
-	grid-template-columns: 32% 0.5% 67%;
-	width: 88%;
+	grid-template-columns: 32% 0.5% 66.5%;
 	overflow-x: hidden;
 	overflow-y: hidden;
 	height: 70%;
-	max-width:fit-content;
+	max-width:87.5%;
 }
+
 .data_box {
 	overflow-x: hidden;
 	overflow-y: hidden;
@@ -70,25 +134,36 @@ button {
 	width: 100%;
 	height: 100%;
 }
+
+.data_top_header {
+	padding-left: 33px;
+	margin: 0 15px 0 15px;
+}
 .canvas_box {
-	overflow: overlay;
+	overflow: auto;
 	overflow-y: hidden;
-	white-space: nowrap;	
+	white-space: normal;	
+	width: 52.5vw;
 }
 .control_box{
-	height: 95%; /* Full-height: remove this if you want "auto" height */
+	height: 100%;
 	overflow-y: auto;
-	width: 12%; /* Set the width of the sidebar */
-	position: fixed; /* Fixed Sidebar (stay in place on scroll) */
+	width: 12%; 
+	position: fixed;
 	right: 0;
-	z-index: 1; /* Stay on top */
-	top: 0; /* Stay at the top */
+	z-index: 1; 
+	top: 0; 
 	overflow-x: hidden; /* Disable horizontal scroll */
-	padding-top: 20px;
-	padding-right: 5px; padding-left: 5px;
+	padding-top: 0.5%;
+	padding-right: 8px; padding-left: 10px;
 	background-color: LightBlue;
 
 }
+
+.control_box .noUi-horizontal { height: 14px; }
+.control_box .noUi-horizontal .noUi-handle { width: 18px; height: 18px; right: -9px; top: -4px; }
+.control_box .slider { margin-top: 2px; margin-bottom: 4px; }
+
 .tabbut{
 	padding: 10px;
 	padding-top: 5px;
@@ -101,6 +176,7 @@ button {
 	white-space: normal;
 	font-family: Arial, sans-serif;
 }
+
 .data_content{
 	padding-top: 20px;
 	margin-left: 5%;
@@ -111,6 +187,43 @@ button {
 	overflow-y: hidden;
 	font-family: Arial, sans-serif;
 	font-size: 14px;
+	position: relative;
+}
+
+.data_content p {
+	margin-top: 14px;
+	margin-bottom: 4px;
+}
+
+.data_content_toolbar {
+	text-align: center;
+}
+
+.tool.section_help_icon {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	width: auto;
+}
+
+.timestamp-container{
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	margin-top: 5px;
+}
+.timestamp-container input{
+	flex-grow: 1;
+	padding: 2px 5px;
+	position: relative;
+	display: inline-block;
+	width: max-content;
+	margin-bottom: 5px;
+	font-family: Arial, sans-serif;
+	font-size: 14px;
+}
+.selected_bookmark{
+	outline: 2px dashed green;
 }
 .tabbut2{
 	padding: 4px;
@@ -128,9 +241,7 @@ button {
   overflow: visible;
   white-space: normal;
 }
-button {
-	font-weight: bold;
-}
+
 .toggler {
 	color: black;
 }
@@ -153,13 +264,12 @@ button {
 	border-width: 1px;
 	margin-bottom: 3px;
 }
-.note_item{
-	display: grid;
-	grid-template-columns: 15px 220px;
-	width: 236px;
-	height: auto;
-	border-width: 1px;
-	margin-bottom: 3px;
+.note_item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    width: auto;
 }
 .note_dataset {
 	width : 150px;
@@ -272,6 +382,48 @@ table, th, td {
 .dynamic_legend{
 	font-family: Arial, sans-serif;
 	font-size: 14px;
+}
+
+/* Timeline specific css */
+.timeline_bookmark_line {
+	position: absolute;
+	width: 1px;
+	background-color: black;
+	z-index: 1;
+}
+.timeline_bookmark_button {
+	position: absolute;
+	width: 15px;
+	height: 15px;
+	border: none;
+	cursor: pointer;
+	border-radius: 5px;
+	z-index: 2;
+}
+.timeline_bookmark_toggle {
+	position: absolute;
+	z-index: 3;
+}
+.timeline_legend_title {
+	text-align: center;
+	margin-bottom: 10px;
+}
+.timeline_legend_row {
+	display: flex;
+	flex-direction: row;
+	gap: 15px;
+}
+.timeline_legend_item {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 5px;
+}
+.timeline_legend_color {
+	width: 15px;
+	height: 15px;
+	border-radius: 5px;
+	margin-right: 10px;
 }
 
 /* matrix arrangement css */

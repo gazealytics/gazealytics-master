@@ -1,15 +1,15 @@
 print('begin')
 
-import math
-import multiprocessing
+# import math
+# import multiprocessing
 import os, sys
 import http.server
-import socketserver
-import io
-import random
-import ujson as json  # moved away from a true json representation, so probably don't need this one
+# import socketserver
+# import io
+# import random
+# import ujson as json  # moved away from a true json representation, so probably don't need this one
 import ast
-import py
+# import py
 
 #try:
 import bundle
@@ -28,6 +28,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def _set_headers(self, code=200):
         self.send_response(code)
         self.send_header('Content-type', 'text/html')
+        self.send_header('Cross-Origin-Opener-Policy', 'same-origin')
+        self.send_header('Cross-Origin-Embedder-Policy', 'require-corp')
         self.end_headers()
 
     # GET requests: returns either the webpage of the favicon
@@ -37,16 +39,18 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.path = '/index.html'
         elif self.path == '/killthisserver':
             os._exit(4)
-        elif self.path == '/favicon.ico':
+        elif self.path == 'images/favicon.ico':
             self.send_response(200)
             self.send_header('Content-type', 'image/png')
             self.end_headers()
-            self.wfile.write(open(DIRECTORY + 'favicon.png', 'rb').read())
+            self.wfile.write(open(DIRECTORY + 'images/favicon.png', 'rb').read())
             return
         if '.' in self.path and self.path.split('.')[-1] in ['js', 'css', 'html', 'png', 'ttf']:
             self.send_response(200)
             c = {'js': 'text/javascript', 'css': 'text/css', 'html': 'text/html', 'png':'image/png', 'ttf':'text/ttf'}[self.path.split('.')[-1]]
             self.send_header('Content-type', c)
+            self.send_header('Cross-Origin-Opener-Policy', 'same-origin')
+            self.send_header('Cross-Origin-Embedder-Policy', 'require-corp')
             self.end_headers()
             self.wfile.write(open(DIRECTORY + self.path[1:], 'rb').read())
             return

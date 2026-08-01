@@ -45,6 +45,7 @@ function load_image(){
     }
 	reader.readAsDataURL(f);
 }
+
 // saving a dataset
 function save_data(id){
 	data = DATASETS[id]; fixs = data.fixs;
@@ -73,6 +74,7 @@ function download_file(filename, text) {
 
   document.body.removeChild(element);
 }
+
 function download_toi(data_id){
 	filename = DATASETS[data_id].name + '.tsv';
 	
@@ -90,6 +92,63 @@ function download_toi(data_id){
 	}
 	download_file(filename, file);
 }
+
+async function download_video() {
+    const { createFFmpeg, fetchFile } = FFmpeg;
+    const ffmpeg = createFFmpeg({ log: true });
+
+    const selectedDataId = document.getElementById('datasets_selection').value;
+
+    if (!VIDEOS[selectedDataId] || !VIDEOS[selectedDataId].videoobj || !VIDEOS[selectedDataId].videoobj.src) {
+        alert("No video data to save.");
+        return;
+    }
+
+    const selectedToiId = DATASETS[selectedDataId].toi_id;
+    const selectedToi = DATASETS[selectedDataId].tois[selectedToiId];
+
+    const selectedToiStart = selectedToi.real_range[0] / 1000;
+    const selectedToiEnd = selectedToi.real_range[1] / 1000;
+
+    const videoSrc = VIDEOS[selectedDataId].videoobj.src;
+
+    await ffmpeg.load();
+
+    const videoFile = await fetch(videoSrc).then((res) => res.blob());
+
+    ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(videoFile));
+
+    const outputFile = 'output.mp4';
+
+	console.log(selectedToiStart, selectedToiEnd);
+	await ffmpeg.run(
+		'-ss', selectedToiStart.toString(),  // twi start
+		'-to', selectedToiEnd.toString(),    // twi end
+		'-i', 'input.mp4',   // input
+		'-r', '30',   // forcing frame rate to 30 fps, video corrupts without it
+		'-c:v', 'copy',  // copy video 
+		'-c:a', 'copy',  // copy audio (potentiall not needed, double check)
+		'-movflags', 'faststart',  // optimising for playback
+		'output.mp4'                         
+	);
+	
+    const trimmedVideo = ffmpeg.FS('readFile', outputFile);
+
+    // blob to download new video
+    const videoBlob = new Blob([trimmedVideo.buffer], { type: 'video/mp4' });
+    const videoURL = URL.createObjectURL(videoBlob);
+
+    const videoName = `${DATASETS[selectedDataId].name || "video_trimmed"}.mp4`;
+    const anchor = document.createElement('a');
+    anchor.href = videoURL;
+    anchor.download = videoName;
+    anchor.style.display = 'none';
+
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+}
+
 
 function list_tois(){
 	file = 'data_id\tdata_name\tgroup\tstart_time\tend_time\ttwi_id\ttoi_name\tstart_time\tend_time' + '\n';
@@ -132,12 +191,12 @@ function aggregate_hist_metrics_for_export (data, fixs, toi, bins, lense) {
 	}
 	else {
 		if(HIST_METRIC.indexOf("lensegroup") > -1){
-			for(let l2=0; l2<lenses.length; l2++){
-				if(lenses[l2].group == selected_lensegroup) {
+			for(let l2=0; l2<metric_lenses.length; l2++){
+				if(metric_lenses[l2].group == selected_lensegroup) {
 					let val_list = [];
 					if( HIST_METRIC == 'fix_lensegroup_dur'){	
 						let val_list = [];		
-						for(let i=toi.j_min; i<toi.j_max; i++){ if( lense!=-1 && lenses[l2].inside(fixs[i].x, fixs[i].y) ){ val_list.push( fixs[i].dt ); } }
+						for(let i=toi.j_min; i<toi.j_max; i++){ if( lense!=-1 && metric_lenses[l2].inside(fixs[i].x, fixs[i].y) ){ val_list.push( fixs[i].dt ); } }
 						min_val = 0; max_val = 1000;
 						for(let i=0; i<val_list.length; i++){ bins[ Math.min(bins.length-1, Math.floor( (val_list[i]-min_val)/(max_val-min_val)*BINS_N ) ) ] += 1; }
 					}else if( lense!=-1 && HIST_METRIC == 'visit_lensegroup_dur' && ORDERLENSEGROUPID.indexOf(selected_lensegroup) != -1 ){
@@ -471,7 +530,11 @@ function load_toi_list(id){
 			if(selected_twi == -1)
 				select_twi(0);
 
-			try{ compute_toi_metrics(id, 0); give_topography(id, 0); load_controls();  }catch( error ){ console.error(error); }
+			try{ 
+				compute_toi_metrics(id, 0); give_topography(id, 0); load_controls();  
+			} catch( error ){ 
+				console.error('Error during initial TOI metrics/topography/load_controls after dataset load:', error); 
+			}
 			background_changed = true; timeline_changed = true; matrix_changed = true;
 
 			if(err_count > 0) {

@@ -1,0 +1,383 @@
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>AOI Hierarchy</title>
+        <link rel="stylesheet" href="css/hierarchy.css">
+    </head>
+    <body>
+        <div style="text-align: center;"><h3>AOI Hierarchy</h3></div>
+        <div class="filter-controls" id="filterButtons">
+            Filter By:
+            <div class="filter-group">
+                <select id="screenFilter">
+                    <option value="all">All Screens</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <select id="appFilter">
+                    <option value="all">All Applications</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <select id="interfaceFilter">
+                    <option value="all">All Interfaces</option>
+                </select>
+            </div>
+            <button id="resetViewBtn">Reset View</button>
+        </div>
+
+        <div class="color-controls" id="colorByButtons">
+            Color By:
+            <div class="color-group">
+                <input type="radio" id="colorNone" name="colorBy" value="none" checked>
+                <label for="colorNone">None</label>
+            </div>
+            <div class="color-group">
+                <input type="radio" id="colorScreen" name="colorBy" value="screen">
+                <label for="colorScreen">Screen</label>
+            </div>
+            <div class="color-group">
+                <input type="radio" id="colorApp" name="colorBy" value="application">
+                <label for="colorApp">Application</label>
+            </div>
+        </div>
+
+        <div id="hierarchyDisplay">
+            Loading AOI data...
+        </div>
+
+        <script>
+        let allLensesData = [];
+        let focusedNodeId = null;
+        let screenColorMap = {};
+        let appColorMap = {};
+        let idsToShowOnCanvas = [];
+        // check if LENS_COLOURS is defined in the parent window
+        const colorPalette = (window.opener && window.opener.LENS_COLOURS) ? window.opener.LENS_COLOURS.slice() : [
+        '#FFCDD2', '#C5CAE9', '#DCEDC8', '#CFD8DC', '#BBDEFB', '#F8BBD0', '#E1BEE7', '#D1C4E9', '#B3E5FC', '#B2EBF2',
+        '#B2DFDB', '#C8E6C9', '#F0F4C3', '#FFF9C4', '#FFECB3', '#FFE0B2', '#FFCCBC', '#D7CCC8', '#F5F5F5', '#FAFAFA', 
+        '#EEEEEE', '#E0E0E0', '#BDBDBD', '#9E9E9E',
+    ];
+
+        function isValidHierarchyId(id) {
+            return id !== undefined && id !== null && String(id) !== '-1';
+        }
+
+        function assignColors() {
+            const uniqueScreenIds = new Set();
+            const uniqueAppIds = new Set();
+
+            allLensesData.forEach(lens => {
+                if (isValidHierarchyId(lens.h1)) uniqueScreenIds.add(String(lens.h1));
+                if (isValidHierarchyId(lens.h2)) uniqueAppIds.add(String(lens.h2));
+            });
+
+            let colorIndex = 0;
+            Array.from(uniqueScreenIds).sort((a, b) => String(a).localeCompare(String(b), undefined, {numeric: true})).forEach(id => {
+                screenColorMap[id] = colorPalette[colorIndex % colorPalette.length];
+                colorIndex++;
+            });
+
+            colorIndex = 0;
+            Array.from(uniqueAppIds).sort((a, b) => String(a).localeCompare(String(b), undefined, {numeric: true})).forEach(id => {
+                appColorMap[id] = colorPalette[colorIndex % colorPalette.length];
+                colorIndex++;
+            });
+        }
+
+        function syncLensVisibility(visibleIds) {
+            // update eye icons in lensbox
+            allLensesData.forEach(lens => {
+                const isVisible = visibleIds.includes(lens.id);
+                
+                // update in popup if element exists
+                const eyeButtonPopup = document.getElementById(`lens_${lens.id}_c`);
+                if (eyeButtonPopup) {
+                    eyeButtonPopup.innerHTML = isVisible 
+                        ? '<i class="fas fa-eye"></i>' 
+                        : '<i class="fas fa-eye-slash"></i>';
+                    eyeButtonPopup.checked = isVisible;
+                }
+                
+                // update in main window if possible
+                const mainWindow = window.opener;
+                if (mainWindow && mainWindow.document) {
+                    const eyeButtonMain = mainWindow.document.getElementById(`lens_${lens.id}_c`);
+                    if (eyeButtonMain) {
+                        eyeButtonMain.innerHTML = isVisible 
+                            ? '<i class="fas fa-eye"></i>' 
+                            : '<i class="fas fa-eye-slash"></i>';
+                        eyeButtonMain.checked = isVisible;
+                    }
+                }
+            });
+        }
+
+        function getChildAoiIds(lenses, filterType, idsToMatch) {
+            const ids = new Set();
+            lenses.forEach(lens => {
+                let isMatch = false;
+                const lensH1 = isValidHierarchyId(lens.h1) ? String(lens.h1) : null;
+                const lensH2 = isValidHierarchyId(lens.h2) ? String(lens.h2) : null;
+                const lensH3 = isValidHierarchyId(lens.h3) ? String(lens.h3) : null;
+
+                if (filterType === 'screen' && lensH1 === idsToMatch[0]) {
+                    isMatch = true;
+                } else if (filterType === 'app' && lensH1 === idsToMatch[0] && lensH2 === idsToMatch[1]) {
+                    isMatch = true;
+                } else if (filterType === 'interface' && lensH1 === idsToMatch[0] && lensH2 === idsToMatch[1] && lensH3 === idsToMatch[2]) {
+                    isMatch = true;
+                }
+
+                if (isMatch && lens.id !== undefined) {
+                    ids.add(lens.id);
+                }
+            });
+            return Array.from(ids);
+        }
+
+        function updateDisplay() {
+            const selectedScreen = document.getElementById('screenFilter').value;
+            const selectedApp = document.getElementById('appFilter').value;
+            const selectedInterface = document.getElementById('interfaceFilter').value;
+            const colorByOption = document.querySelector('input[name="colorBy"]:checked').value;
+
+            const filteredLenses = allLensesData.filter(lens => {
+                if (!isValidHierarchyId(lens.h1)) return false;
+                
+                const matchesScreen = (selectedScreen === 'all' || String(lens.h1) === selectedScreen);
+                const matchesApp = selectedApp === 'all' || (isValidHierarchyId(lens.h2) && String(lens.h2) === selectedApp);
+                const matchesInterface = selectedInterface === 'all' || (isValidHierarchyId(lens.h3) && String(lens.h3) === selectedInterface);
+                
+                return matchesScreen && matchesApp && matchesInterface;
+            });
+
+            // get the AOIs that should be visible
+            if (focusedNodeId) {
+                const parts = focusedNodeId.split('-');
+                const levelType = parts[0];
+                const idsToMatch = parts.slice(1);
+                idsToShowOnCanvas = getChildAoiIds(allLensesData, levelType, idsToMatch);
+            } else if (selectedScreen === 'all' && selectedApp === 'all' && selectedInterface === 'all') {
+                // show all AOIs when no filters are applied
+                idsToShowOnCanvas = allLensesData.map(lens => lens.id);
+            } else {
+                // filtered AOIs
+                idsToShowOnCanvas = filteredLenses.map(lens => lens.id);
+            }
+
+            // update canvas display
+            const mainWindow = window.opener;
+            if (mainWindow && mainWindow.setVisibleLenses) {
+                const canvasColorMap = {};
+                if (colorByOption === 'screen') {
+                    idsToShowOnCanvas.forEach(aoiId => {
+                        const lens = allLensesData.find(l => l.id === aoiId);
+                        if (lens && isValidHierarchyId(lens.h1)) {
+                            canvasColorMap[aoiId] = screenColorMap[String(lens.h1)];
+                        }
+                    });
+                } else if (colorByOption === 'application') {
+                    idsToShowOnCanvas.forEach(aoiId => {
+                        const lens = allLensesData.find(l => l.id === aoiId);
+                        if (lens && isValidHierarchyId(lens.h2)) {
+                            canvasColorMap[aoiId] = appColorMap[String(lens.h2)];
+                        }
+                    });
+                }
+                mainWindow.setVisibleLenses(idsToShowOnCanvas, colorByOption !== 'none' ? canvasColorMap : null);
+            }
+
+            // update eye icons in both popup and main window lensbox
+            syncLensVisibility(idsToShowOnCanvas);
+
+            renderHierarchy(filteredLenses, colorByOption);
+        }
+
+        function renderHierarchy(lensesToRender, colorByOption) {
+            const hierarchyDisplay = document.getElementById('hierarchyDisplay');
+            const hierarchy = {};
+
+            lensesToRender.forEach(lens => {
+                if (!isValidHierarchyId(lens.h1)) return;
+
+                const screenId = String(lens.h1);
+                const appId = isValidHierarchyId(lens.h2) ? String(lens.h2) : null;
+                const interfaceId = isValidHierarchyId(lens.h3) ? String(lens.h3) : null;
+                const lensName = lens.name;
+                const lensId = lens.id;
+
+                if (!hierarchy[screenId]) hierarchy[screenId] = { _aois: [], applications: {} };
+                
+                if (appId) {
+                    if (!hierarchy[screenId].applications[appId]) {
+                        hierarchy[screenId].applications[appId] = { _aois: [], interfaces: {} };
+                    }
+                    if (interfaceId) {
+                        if (!hierarchy[screenId].applications[appId].interfaces[interfaceId]) {
+                            hierarchy[screenId].applications[appId].interfaces[interfaceId] = { _aois: [] };
+                        }
+                        hierarchy[screenId].applications[appId].interfaces[interfaceId]._aois.push({ id: lensId, name: lensName });
+                    } else {
+                        hierarchy[screenId].applications[appId]._aois.push({ id: lensId, name: lensName });
+                    }
+                } else {
+                    hierarchy[screenId]._aois.push({ id: lensId, name: lensName });
+                }
+            });
+
+            if (Object.keys(hierarchy).length === 0) {
+                hierarchyDisplay.innerHTML = "<p>No AOIs found matching the current filters.</p>";
+                return;
+            }
+            
+            let treeHtml = '<ul class="tree-list">';
+            const sortedScreenIds = Object.keys(hierarchy).sort((a, b) => String(a).localeCompare(String(b), undefined, {numeric: true}));
+
+            for (const screenId of sortedScreenIds) {
+                const screenData = hierarchy[screenId];
+                const screenNodeId = `screen-${screenId}`;
+                const isHighlighted = focusedNodeId === screenNodeId;
+                const screenColorStyle = colorByOption === 'screen' ? `background-color: ${screenColorMap[screenId]};` : '';
+
+                treeHtml += `<li id="${screenNodeId}" class="level-screen expanded ${isHighlighted ? 'highlighted' : ''}" style="${screenColorStyle}">
+                    <span class="toggle-icon expanded"></span>Screen ID: ${screenId}<ul>`;
+                
+                screenData._aois.forEach(aoi => {
+                    treeHtml += `<li class="level-aoi">AOI: ${aoi.name}</li>`;
+                });
+                
+                const sortedAppIds = Object.keys(screenData.applications).sort((a, b) => String(a).localeCompare(String(b), undefined, {numeric: true}));
+                for (const appId of sortedAppIds) {
+                    const appData = screenData.applications[appId];
+                    const appNodeId = `app-${screenId}-${appId}`;
+                    const isHighlighted = focusedNodeId === appNodeId;
+                    const appColorStyle = colorByOption === 'application' ? `background-color: ${appColorMap[appId]};` : '';
+
+                    treeHtml += `<li id="${appNodeId}" class="level-app expanded ${isHighlighted ? 'highlighted' : ''}" style="${appColorStyle}">
+                        <span class="toggle-icon expanded"></span>Application ID: ${appId}<ul>`;
+                    
+                    appData._aois.forEach(aoi => {
+                        treeHtml += `<li class="level-aoi">AOI: ${aoi.name}</li>`;
+                    });
+                    
+                    const sortedInterfaceIds = Object.keys(appData.interfaces).sort((a, b) => String(a).localeCompare(String(b), undefined, {numeric: true}));
+                    for (const interfaceId of sortedInterfaceIds) {
+                        const interfaceData = appData.interfaces[interfaceId];
+                        const interfaceNodeId = `interface-${screenId}-${appId}-${interfaceId}`;
+                        const isHighlighted = focusedNodeId === interfaceNodeId;
+                        treeHtml += `<li id="${interfaceNodeId}" class="level-interface expanded ${isHighlighted ? 'highlighted' : ''}">
+                            <span class="toggle-icon expanded"></span>Interface ID: ${interfaceId}<ul>`;
+                        
+                        interfaceData._aois.forEach(aoi => {
+                            treeHtml += `<li class="level-aoi">AOI: ${aoi.name}</li>`;
+                        });
+                        treeHtml += '</ul></li>';
+                    }
+                    treeHtml += '</ul></li>';
+                }
+                treeHtml += '</ul></li>';
+            }
+            treeHtml += '</ul>';
+            hierarchyDisplay.innerHTML = treeHtml;
+
+            document.querySelectorAll('.level-screen, .level-app, .level-interface').forEach(node => {
+                node.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                    
+                    const isCollapsed = this.classList.contains('collapsed');
+                    this.classList.toggle('expanded', isCollapsed);
+                    this.classList.toggle('collapsed', !isCollapsed);
+                    this.querySelector('.toggle-icon').classList.toggle('expanded', isCollapsed);
+                    this.querySelector('.toggle-icon').classList.toggle('collapsed', !isCollapsed);
+
+                    focusedNodeId = (focusedNodeId === this.id) ? null : this.id;
+                    updateDisplay();
+                });
+            });
+        }
+
+        function populateFilterDropdowns(lensesData) {
+            const screenFilter = document.getElementById('screenFilter');
+            const appFilter = document.getElementById('appFilter');
+            const interfaceFilter = document.getElementById('interfaceFilter');
+
+            screenFilter.innerHTML = '<option value="all">All Screens</option>';
+            appFilter.innerHTML = '<option value="all">All Applications</option>';
+            interfaceFilter.innerHTML = '<option value="all">All Interfaces</option>';
+
+            const uniqueScreenIds = new Set();
+            const uniqueAppIds = new Set();
+            const uniqueInterfaceIds = new Set();
+
+            lensesData.forEach(lens => {
+                if (isValidHierarchyId(lens.h1)) uniqueScreenIds.add(lens.h1);
+                if (isValidHierarchyId(lens.h2)) uniqueAppIds.add(lens.h2);
+                if (isValidHierarchyId(lens.h3)) uniqueInterfaceIds.add(lens.h3);
+            });
+
+            Array.from(uniqueScreenIds).sort((a, b) => String(a).localeCompare(String(b), undefined, {numeric: true})).forEach(id => {
+                screenFilter.appendChild(new Option(id, id));
+            });
+
+            Array.from(uniqueAppIds).sort((a, b) => String(a).localeCompare(String(b), undefined, {numeric: true})).forEach(id => {
+                appFilter.appendChild(new Option(id, id));
+            });
+
+            Array.from(uniqueInterfaceIds).sort((a, b) => String(a).localeCompare(String(b), undefined, {numeric: true})).forEach(id => {
+                interfaceFilter.appendChild(new Option(id, id));
+            });
+        }
+
+        function setLensesForHierarchy(lensesData) {
+            allLensesData = lensesData;
+            assignColors();
+            
+            // show all AOIs by default when first loading
+            idsToShowOnCanvas = allLensesData.map(lens => lens.id);
+            
+            const mainWindow = window.opener;
+            if (mainWindow && mainWindow.setVisibleLenses) {
+                mainWindow.setVisibleLenses(idsToShowOnCanvas, null);
+            }
+
+            if (allLensesData.length === 0 || !allLensesData.some(lens => isValidHierarchyId(lens.h1))) {
+                document.getElementById('hierarchyDisplay').innerHTML = "<p>No AOIs with valid hierarchy data found.</p>";
+                return;
+            }
+
+            populateFilterDropdowns(allLensesData);
+            updateDisplay();
+        }
+
+        window.onload = function() {
+            // get initial data from parent window
+            const mainWindow = window.opener;
+            if (mainWindow && mainWindow.lenses) {
+                setLensesForHierarchy(mainWindow.lenses);
+            } else {
+                document.getElementById('hierarchyDisplay').innerHTML = "<p>Waiting for AOI data from main window...</p>";
+            }
+
+            // event listeners for filters
+            document.getElementById('screenFilter').addEventListener('change', updateDisplay);
+            document.getElementById('appFilter').addEventListener('change', updateDisplay);
+            document.getElementById('interfaceFilter').addEventListener('change', updateDisplay);
+
+            // event listeners for color by
+            document.querySelectorAll('input[name="colorBy"]').forEach(radio => {
+                radio.addEventListener('change', updateDisplay);
+            });
+
+            document.getElementById('resetViewBtn').addEventListener('click', () => {
+                focusedNodeId = null;
+                document.getElementById('screenFilter').value = 'all';
+                document.getElementById('appFilter').value = 'all';
+                document.getElementById('interfaceFilter').value = 'all';
+                document.getElementById('colorNone').checked = true;
+                updateDisplay();
+            });
+        };
+        </script>
+    </body>
+</html>

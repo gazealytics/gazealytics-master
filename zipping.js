@@ -1,5 +1,4 @@
-
-
+/** Saving zip code **/
 function download_zip(filename, base64) {
   var element = document.createElement('a');
   element.setAttribute('href', "data:application/zip;base64," + base64);
@@ -125,7 +124,6 @@ function save_zip(){
 			zip.file(filename, file);
 		}
 	}
-	
 	//zip.generateAsync({type:"base64"}).then(function (base64) { download_zip(zip_name(), base64); console.log('zipping complete'); });
 	zip.generateAsync({type:"blob"}).then(function (data) { console.log("zip downloading"); saveAs(data, zip_name()); console.log('zipping complete'); document.getElementById("project_txt").innerHTML = '';	document.getElementById("save_button").disabled = false;});
 }
@@ -144,6 +142,40 @@ function zip_name(){
 }
 
 
+/** Loading zip code **/
+// Handles case insensitivity when looking for zip internal file names
+function find_zip_entry(zip, filename){
+	let matches = zip.file(new RegExp('^' + filename.replace(/\./g, '\\.') + '$', 'i'));
+	return matches.length ? matches[0] : null;
+}
+
+function read_zip_file(zip, filename, type){
+	let entry = find_zip_entry(zip, filename);
+	if(entry == null){
+		console.warn(filename + ' not found in zip, skipping load.');
+		return Promise.resolve(null);
+	}
+	return entry.async(type).then(function(data){
+		if(!data || (type == 'string' && data.trim() == '')){
+			console.warn(filename + ' is empty, skipping load.');
+			return null;
+		}
+		return data;
+	});
+}
+
+function read_zip_json(zip, filename, requiredKey){
+	return read_zip_file(zip, filename, 'string').then(function(data){
+		if(data == null) return null;
+		let content = JSON.parse(data);
+		if(requiredKey && content[requiredKey] == null){
+			console.warn(filename + ' has no ' + requiredKey + ', skipping load.');
+			return null;
+		}
+		return content;
+	});
+}
+
 function load_zip(){
 	document.getElementById("project_txt").innerHTML = 'Loading...';
 	document.getElementById("load_button").disabled = true;
@@ -153,15 +185,32 @@ function load_zip(){
 		document.getElementById("load_button").disabled = false;
 		return;
 	}
+	if(!f.name.toLowerCase().endsWith('.zip')){
+		alert('A filetype other than .zip has been provided, please upload your project as a .zip file');
+		document.getElementById("project_txt").innerHTML = '';
+		document.getElementById("load_button").disabled = false;
+		return;
+	}
+	let zip_load_errors = [];
+	let show_zip_load_error = function(file, error){
+		console.error(file + ':', error);
+		zip_load_errors.push(file);
+	};
+	setTimeout(function(){
+		if(zip_load_errors.length > 0){
+			alert('There was a problem loading the following file(s) from your zip, please check them against the sample project in GitHub: ' + zip_load_errors.join(', '));
+		}
+	}, 500);
 	JSZip.loadAsync(f)                                   // 1) read the Blob
 		.then(function(zip) {
-			zip.file("back.png").async("base64").then(function (data) {
+			read_zip_file(zip, "back.png", "base64").then(function(data){
+					if(data == null) return;
 					image_url = "data:image/png;base64," + data;
-					image_changed = true; loaded = true; 
-				});
-			zip.file("AOIs.json").async("string").then(function (data) {
+					image_changed = true; loaded = true;
+				}).catch(function(error){ show_zip_load_error("back.png", error); });
+				read_zip_json(zip, "AOIs.json", "base_lenses").then(function(content){
+					if(content == null) return;
 					try{
-						let content = JSON.parse(data);
 						// update lenses array, rebuild lens functions
 						base_lenses = content.base_lenses; order_lenses = content.order_lenses; lid = base_lenses.length;
 						selected_lens = content.selected_lens; building_lens_id = content.building_lens_id; selected_lensegroup = content.selected_lensegroup
@@ -238,6 +287,20 @@ function load_zip(){
 									base_lenses[v].group = v % LENS_COLOURS.length;								
 								
 								item.value = base_lenses[v].group;
+
+								// Temporal stuff
+								item = document.getElementById('lens_'+v+'_screen_id');
+								if(base_lenses[v].h1 != undefined && base_lenses[v].h1 != null){
+									item.value = base_lenses[v].h1;
+								}
+								item = document.getElementById('lens_'+v+'_app_id');
+								if(base_lenses[v].h2 != undefined && base_lenses[v].h2 != null){
+									item.value = base_lenses[v].h2;
+								}
+								item = document.getElementById('lens_'+v+'_interface_id');
+								if(base_lenses[v].h3 != undefined && base_lenses[v].h3 != null){
+									item.value = base_lenses[v].h3;
+								}
 							}
 						}
 						//process the remaining lenses
@@ -282,6 +345,11 @@ function load_zip(){
 									base_lenses[v].group = v % LENS_COLOURS.length;								
 								
 								item.value = base_lenses[v].group;
+								item = document.getElementById('lens_'+v+'_screen_id');
+								console.log(base_lenses[v]);
+								if(base_lenses[v].h1 != undefined && base_lenses[v].h1 != null){
+									item.value = base_lenses[v].h1;
+								}
 								
 								console.log("aoi json: "+base_lenses.map(aoi => aoi.group));
 								// console.log("document.getElementById(["+v+"].group="+document.getElementById('lens_'+v+'_lensegroup'));		
@@ -310,16 +378,26 @@ function load_zip(){
 								base_lenses[iter].draw = proto.draw;
 								base_lenses[iter].make_controls = proto.make_controls;
 								// base_lenses[iter].getArea = proto.getArea;
+								base_lenses[iter].edit_start_time = proto.edit_start_time;
+								base_lenses[iter].edit_end_time = proto.edit_end_time;
+								base_lenses[iter].edit_hierarchy = proto.edit_hierarchy;
+								base_lenses[iter].edit_priority = proto.edit_priority;
+							}
+							if (base_lenses[iter].timeRanges === undefined || base_lenses[iter].timeRanges == null) {
+								base_lenses[iter].timeRanges = [];
+								base_lenses[iter].timeRanges.push({start: 0, end: maxEndTime, priority: 1});
+							}
+							if (base_lenses[iter].currentPriority === undefined || base_lenses[iter].currentPriority == null) {
+								base_lenses[iter].currentPriority = 1;
 							}
 						}
 						update_lens_colors();
 						background_changed = true; matrix_changed = true; timeline_changed = true;
-					}catch (error) { console.error(error); }
-				});
-				zip.file("TWIs.json").async("string").then(function (data) {
+					} catch (error) { show_zip_load_error("AOIs.json", error); }
+				}).catch(function(error){ show_zip_load_error("AOIs.json", error); });
+				let twisLoadPromise = read_zip_json(zip, "TWIs.json", "base_twis").then(function(content){
+					if(content == null) return;
 					try{
-						let content = JSON.parse(data);
-						
 						// update lenses array, rebuild lens functions
 						base_twis = content.base_twis; order_twis = content.order_twis;
 						selected_twi = content.selected_twi; selected_twigroup = content.selected_twigroup;
@@ -356,11 +434,18 @@ function load_zip(){
 						}
 						update_twi_colors();
 						background_changed = true; matrix_changed = true; timeline_changed = true;
-					}catch (error) { console.error(error); }
-				});
-			zip.file("Participants.json").async("string").then(function (data) {
+					}catch (error) { show_zip_load_error("TWIs.json", error); }
+				}).catch(function(error){ show_zip_load_error("TWIs.json", error); });
+			twisLoadPromise.then(function() {
+				return read_zip_json(zip, "Participants.json", "datasets");
+			}).then(function (content) {
+					if(content == null){
+						show_zip_load_error("Participants.json", new Error("Participants.json is missing or empty - this file is required."));
+						document.getElementById("project_txt").innerHTML = '';
+						document.getElementById("load_button").disabled = false;
+						return;
+					}
 					try{
-						let content = JSON.parse(data);
 						// update datasets array
 						DATASETS = content.datasets;
 						for(let i = 0; i<DATASETS.length; i++) VIDEOS.push({});
@@ -377,6 +462,10 @@ function load_zip(){
 								node.setAttribute('onclick', "select_data("+v+")");
 								node.setAttribute('class', 'data_item');
 								document.getElementById('mylist').appendChild(node);
+
+								if (maxEndTime < DATASETS[v].t_end) {
+									maxEndTime = DATASETS[v].t_end;
+								}
 								// add tois
 								for( var i=1; i < DATASETS[v].tois.length; i++ ){
 									ltoi = document.getElementById(v+"_toi");
@@ -417,7 +506,7 @@ function load_zip(){
 
 								//backward compatibility
 								for(let toi = 0; toi < DATASETS[v].tois.length; toi++){
-									if(DATASETS[v].tois[toi].real_range == undefined && TIME_STRAT == 'real') {
+									if(TIME_STRAT == 'real') {
 										DATASETS[v].tois[toi].real_range = [];
 										DATASETS[v].tois[toi].real_range[0] = (DATASETS[v].tois[toi].range[0])*(DATASETS[v].t_end - DATASETS[v].t_start)+DATASETS[v].t_start;
 										DATASETS[v].tois[toi].real_range[1] = (DATASETS[v].tois[toi].range[1])*(DATASETS[v].t_end - DATASETS[v].t_start)+DATASETS[v].t_start;
@@ -427,45 +516,61 @@ function load_zip(){
 							if(selected_data == v)
 								select_data(v);
 						}
+						base_lenses.forEach((lense) => {
+							if (lense.timeRanges[0].end === 0) {
+								lense.timeRanges[0].end = maxEndTime;
+							}
+						})
+						handleAOITimeChange(0, false);
 						if(selected_twi != -1 && document.getElementById("twi_"+selected_twi) != undefined)
 							select_twi(selected_twi);
 						update_all();
-					}catch (error) { console.error(error); }
-				});
-			zip.file("notes.json").async("string").then(function (data) {
-					try{
-						let content = JSON.parse(data);
-						//json_lenses = JSON.stringify( { base_notes:base_notes, order_notes:order_notes, selected_note:selected_note } );
-						list = document.getElementById('notelist');
-						list.innerHTML = "";//content.datahtml;
-						base_notes = content.base_notes;
-						for(var v=0; v < base_notes.length; v++){
-							if( base_notes[v].included ){
-								q = notebox.replace(/#/g, v);
-								var node = document.createElement("li");
-								node.innerHTML = q; node.id = "note_"+v;
-								// node.setAttribute('onclick', "if(selected_note!="+v+"){select_note("+v+");}else{select_note(-1);}");
-								node.onclick = function(e){
-									var v = parseInt(this.id.split('_')[1]);
-									var e_type = e.target.id.split('_')[2];
-									// selection conditions
-									if( e_type != 'content' && e_type != 'pid'){
-										if(selected_note!=v){select_note(v);}else{select_note(-1);}
-									}else{
-										if(selected_note!=v){select_note(v);}
+						read_zip_json(zip, "notes.json", "base_notes").then(function(content){
+							if(content == null) return;
+							try {
+								noteTypes = [];
+		
+								const list = document.getElementById("notelist");
+								list.innerHTML = "";
+						
+								base_notes = [];
+								const notes = content.base_notes || [];
+								selected_note = content.selected_note || -1;
+						
+								notes.forEach((note) => {
+									new_note(
+										note.X,
+										note.Y,
+										note.content,
+										note.pid,
+										note.type,
+										note.timestamp,
+										note.timestampMs,
+										note.occuredTimestamp,
+										note.observer,
+										note.visibleOnCanvas,
+										note.visibleOnTimeline,
+										true, // isPreloaded
+										note.locked
+									);
+									if (note.type !== undefined && !noteTypes.includes(note.type)) {
+										noteTypes.push(note.type);
 									}
-								}
-								node.setAttribute('class', 'note_item');
-								document.getElementById('notelist').appendChild(node);
-								document.getElementById('note_'+v+"_content").value = base_notes[v].content;
+								});
+						
+								select_note(selected_note);
+								loadNotesIntoDatasets();
+								updateNoteTypeDropdown();
+								document.getElementById("load_notes").disabled = false;
+							} catch (error) {
+								show_zip_load_error("notes.json", error);
 							}
-						}
-						select_note( content.selected_note );
-					}catch (error) { console.error(error); }
-				});
-			zip.file("settings.json").async("string").then(function (data) {
+						}).catch(function(error){ show_zip_load_error("notes.json", error); });
+					} catch (error) { show_zip_load_error("Participants.json", error); }
+				}).catch(function(error){ show_zip_load_error("Participants.json", error); });
+			read_zip_json(zip, "settings.json").then(function(content){
+					if(content == null) return;
 					try{
-						let content = JSON.parse(data);
 						cid = content.cid; //lid = content.lid;
 						// update background image
 						limit_select = content.limit_select;
@@ -610,24 +715,14 @@ function load_zip(){
 						make_note_dataset_selectors();
 						reorder_matrix(DEFAULT_SYMMETRIC_SORT);
 						background_changed = true; matrix_changed = true; timeline_changed = true;
-					}catch (error) { console.error(error); }
-				});
+					}catch (error) { show_zip_load_error("settings.json", error); }
+				}).catch(function(error){ show_zip_load_error("settings.json", error); });
 			document.getElementById("project_txt").innerHTML = '';
 			document.getElementById("load_button").disabled = false;
 		}).catch(function (err) {
 			console.log('Unable to parse', err);
+			alert('Your zip was unable to be loaded, please check the zip format against the sample project in GitHub to identify any mismatches.');
 			document.getElementById("project_txt").innerHTML = '';
 			document.getElementById("load_button").disabled = false;
 			});
 }
-
-
-
-
-
-
-
-
-
-
-

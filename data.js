@@ -22,7 +22,7 @@ let twibox = '<div class="dragger" draggable="true" ondragend="dragEnd()" ondrag
 + '<div class="controls">'
 + '<input type="text" id="#_twi_name" style="width:110px" value="twi#">'
 + '<div id="#_col" style="display:inline;width:19px;height:19px;"></div>'
-+ '<button id="twi_#_c" checked="true" onclick="not_all_eye("showtwis")> <i class="fas fa-eye"></i> </button>'
++ '<button id="twi_#_c" checked="true"> <i class="fas fa-eye"></i> </button>'
 + '<input class="num" type="number" id="#_twigroup" style="width:50px" value = 1 step=1 min=1 max=20>'
 + '<div class="tool inner_button"><button  id="#_x" onclick="delete_twi(#);"> <i class="far fa-trash-alt"></i> </button><span class="tip">Delete the TWI</span></div>';
 
@@ -46,6 +46,10 @@ let toi_end = 0;
 let previous_toi_name = "";
 let current_toi_id = 0;
 let tois_to_be_added = [];
+let maxEndTime = 0;
+let toisOfSelectedTwi = [];
+let selectedTwiMaxTime = 0;
+let selectedTwiMinTime = 1000000000000000;
 
 class Node {
     constructor(data) {
@@ -225,7 +229,14 @@ function new_file(){
 
 		if( newdata.initialised ){ // new load is valid, accept it
 			var id = DATASETS.length; DATASETS.push(newdata); VIDEOS.push({}); cid = DATASETS.length;
+
+			selectedTwiMaxTime = Math.max(selectedTwiMaxTime, newdata.t_end);
+			selectedTwiMinTime = Math.min(selectedTwiMinTime, newdata.t_start);
 			
+			if (maxEndTime < newdata.t_end) {
+				maxEndTime = newdata.t_end;
+			}
+
 			q = databox.replace(/#/g, id);
 			var node = document.createElement("li");
 			node.innerHTML = q; node.id = id;
@@ -252,9 +263,9 @@ function new_file(){
 			
 			select_data(id); 
 			if(base_twis.length == 0){
-				base_twis.push({name: "All", group: 1, included: true});
+				base_twis.push({name: "All", group: 1, included: true, checked: true});
 				add_item_to_twilist("All", 0);
-				document.getElementById("twi_0_c").onclick = function(){ document.getElementById('sort_dropdown').value = 'No_sort'; load_controls(); matrix_changed = true;timeline_changed=true;  this.checked = !this.checked; if(this.checked){this.innerHTML='<i class="fas fa-eye"></i>';}else{this.innerHTML='<i class="fas fa-eye-slash"></i>';} };
+				document.getElementById("twi_0_c").onclick = function(){ document.getElementById('sort_dropdown').value = 'No_sort'; load_controls(); matrix_changed = true;timeline_changed=true;  this.checked = !this.checked; removeAllBookmarkButtons(); if(this.checked){this.innerHTML='<i class="fas fa-eye"></i>';}else{this.innerHTML='<i class="fas fa-eye-slash"></i>'; } };
 			}
 			
 			for(let i = 0; i < tois_to_be_added.length; i++){
@@ -276,7 +287,11 @@ function new_file(){
 			if(selected_twi == -1)
 				select_twi(0);
 
-			try{ compute_toi_metrics(id, 0); give_topography(id, 0); load_controls();  }catch( error ){ console.error(error); }
+			try{ 
+				compute_toi_metrics(id, 0); give_topography(id, 0); load_controls();  
+			} catch( error ){ 
+				console.error('Error during initial TOI metrics/topography/load_controls after dataset load:', error); 
+			}
 			background_changed = true; timeline_changed = true; matrix_changed = true;
 			make_note_dataset_selectors();
 			if(newdata.fixs.length < 2){cluster_warn+= '   ' +newdata.name+'\n'}
@@ -284,6 +299,7 @@ function new_file(){
 		fileCounter += 1;
 		document.getElementById("dataset_load_txt").innerHTML = '';
 		document.getElementById("dataset_button").disabled = false;
+		document.getElementById("load_notes").disabled = false;
 		if(fileCounter < filelist.length){ new_file(); }
 		else{ 
 			if(err_msg.length>0){alert('Not all data was formatted as required. Please note:\n' + err_msg);}
@@ -379,6 +395,7 @@ function index_location(array, value){ // binary search for array index where va
 	}
 	return s;
 }
+
 function add_item(){
 	var v = cid; cid += 1;
 	q = databox.replace(/#/g, v);
@@ -398,6 +415,7 @@ function add_item(){
 	document.getElementById(v+"_g").value = (v+1)%GROUPINGS.length;
 	select_data(v); document.getElementById(v+'_f').click(); make_dynamic_legend();
 }
+
 function update_times(){
 	list = document.getElementById('mylist').children;
 	let bUpdateVideo = false; 
@@ -406,6 +424,25 @@ function update_times(){
 	for(var i=0; i<list.length; i++){
 		val = list[i].id;
 		range = document.getElementById(val+'_sl').noUiSlider.get();
+
+		if(DATASETS[val] != undefined && DATASETS[val].tois != undefined && DATASETS[val].toi_id != -1 &&
+				DATASETS[val].tois[DATASETS[val].toi_id] != undefined && DATASETS[val].tois[DATASETS[val].toi_id].included){
+			DATASETS[val].tois[DATASETS[val].toi_id].range = range;
+
+			if(TIME_STRAT == 'real' && DATASETS[val].tois[DATASETS[val].toi_id].real_range != undefined){
+				let t0r = DATASETS[val].t_start; let t1r = DATASETS[val].t_end;
+				DATASETS[val].tois[DATASETS[val].toi_id].real_range[0] = range[0] * (t1r - t0r) + t0r;
+				DATASETS[val].tois[DATASETS[val].toi_id].real_range[1] = range[1] * (t1r - t0r) + t0r;
+			}
+			if(DATASETS[val].slid_vals[0] != range[0] || DATASETS[val].slid_vals[1] != range[1]){
+				DATASETS[val].slid_vals = range;
+				compute_toi_metrics(val, DATASETS[val].toi_id);
+				give_topography(val, DATASETS[val].toi_id);
+				background_changed |= SHOW_FIX||SHOW_TOPO; midground_changed |= SHOW_SACCADE;
+				foreground_changed = true; timeline_changed = true; matrix_changed = true; update_topos = true;
+			}
+		}
+
 		if(DATASETS[val].fixs.length >= 2){
 			t0 = DATASETS[val].t_start; t1 = DATASETS[val].t_end;
 			tmin = range[0] * ( t1 - t0 ) + t0; tmax = range[1] * ( t1 - t0 ) + t0;
@@ -438,7 +475,6 @@ function update_times(){
 	//update video with the time
 	if(bUpdateVideo && selected_data != -1 && DATASETS[selected_data] != null && DATASETS[selected_data] != undefined && 
 		currentVideoObj != null && currentVideoObj != undefined) {
-		// type_select('video');
 		VIDEOS[selected_data].videoobj.time(set_video_cursor);
 	}
 }
@@ -487,6 +523,15 @@ function delete_item(id){
 	}
 	make_dynamic_legend();	
 }
+function select_data_by_name(sampleName) {
+    for (let i = 0; i < DATASETS.length; i++) {
+        if (DATASETS[i].name === sampleName) {
+            select_data(i);
+            return;
+        }
+    }
+    console.warn("Sample with name '" + sampleName + "' not found.");
+}
 function select_data(id){
 	list = document.getElementById('mylist').children;
 	for(i =0;i < list.length; i++){
@@ -514,7 +559,7 @@ function select_twi(id){
 			list[i].classList.toggle('selected');
 		}
 	}
-	
+
 	selected_twi = id;
 	if(id < base_twis.length)
 		selected_twigroup = base_twis[id].group;
@@ -526,6 +571,7 @@ function select_twi(id){
 		if(DATASETS[data_id].included)
 			set_toi(data_id, id);
 	}
+	handleTWIChange();
 	background_changed |= SHOW_FIX||SHOW_TOPO;
 	if(SHOW_TOPO) update_topo = true;
 }
@@ -539,6 +585,24 @@ function set_toi(data_id, twi_id){
 
 	let data = DATASETS[data_id];
 	data.toi_id = twis.indexOf(twi_id);
+
+	if (toisOfSelectedTwi.length > 0 && !toisOfSelectedTwi.every(t => t.twi_id === twi_id)) {
+		toisOfSelectedTwi = [];
+		selectedTwiMaxTime = 0;
+		selectedTwiMinTime = 1000000000000000;
+	}
+
+	if (data.checked) {
+		for (let toi of data.tois) {
+			if (toi.twi_id == twi_id && toi) {
+				if (!toisOfSelectedTwi.some(t => t === toi)) {
+					toisOfSelectedTwi.push(toi);
+					selectedTwiMaxTime = Math.max(selectedTwiMaxTime, toi.tmax);
+					selectedTwiMinTime = Math.min(selectedTwiMinTime, toi.tmin);
+				}
+			}
+		}
+	}
 
 	let ele = document.getElementById(data_id+"_twi_"+twi_id);
 	
@@ -646,9 +710,21 @@ function add_item_to_twilist(name, twi_id){
 	node.setAttribute('class', 'data_item');
 	document.getElementById('twilist').appendChild(node);
 	update_twi_colors();
-	
+
 	document.getElementById('twi_'+v+'_c').checked = true;
-	document.getElementById('twi_'+v+'_c').onclick = function(){ document.getElementById('sort_dropdown').value = 'No_sort'; load_controls(); matrix_changed = true;timeline_changed=true;  this.checked = !this.checked; if(this.checked){this.innerHTML='<i class="fas fa-eye"></i>';}else{this.innerHTML='<i class="fas fa-eye-slash"></i>';} }
+	document.getElementById("twi_" + v + "_c").onclick = function () {
+		document.getElementById("sort_dropdown").value = "No_sort";
+		load_controls();
+		matrix_changed = true;
+		timeline_changed = true;
+		this.checked = !this.checked;
+		if (this.checked) {
+			this.innerHTML = '<i class="fas fa-eye"></i>';
+		} else {
+			this.innerHTML = '<i class="fas fa-eye-slash"></i>';
+		}
+		removeAllBookmarkButtons();
+	};
 	document.getElementById(v+'_twi_name').value = name;
 	document.getElementById(v+'_twigroup').value = base_twis[v].group;
 }
@@ -710,7 +786,7 @@ function add_toi(data_id, t0, t1, type, name, t0_real, t1_real){
 		let groupnum = base_twis.length+1;
 		if(groupnum > TWIS_COLOURS.length)
 			groupnum = TWIS_COLOURS.length;
-		base_twis.push({name: name, group: groupnum});
+		base_twis.push({name: name, group: groupnum, checked: true});
 		twi_id = base_twis.length-1;
 		order_twis.push(twi_id);	
 		add_item_to_twilist(name, twi_id);
@@ -1441,4 +1517,76 @@ function bundle(){
 	}
 }
 
+let importNotes = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.tsv';
 
+    input.onchange = function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const content = e.target.result;
+                processNotesTSV(content);
+            };
+            
+            reader.readAsText(file);
+        }
+    };
+
+    input.click();
+}
+
+let processNotesTSV = (notesContent) => {
+    const lines = notesContent.trim().split('\n');
+
+    const COLUMN_SESSION_START_DATE = 0;
+    const COLUMN_SESSION_START_TIME = 1;
+    const COLUMN_OCCURED_DATE = 6;
+    const COLUMN_OCCURED_TIMES = 7;
+    const COLUMN_OBSERVER = 4;
+    const COLUMN_PARTICIPANT_ID = 11;
+    const COLUMN_EVENT_DETAILS = 9;
+    const COLUMN_TYPE = 10;
+
+    const dataByParticipant = {};
+    const hasHeaders = /^[a-zA-Z]/.test(lines[0].split('\t')[0]);
+    const rows = hasHeaders ? lines.slice(1) : lines;
+
+    rows.forEach((line) => {
+        const values = line.split('\t');
+
+        const participantID = values[COLUMN_PARTICIPANT_ID];
+        if (!dataByParticipant[participantID]) {
+            dataByParticipant[participantID] = { events: [] };
+        }
+
+        const OCCURED_TIMESTAMP = values[COLUMN_OCCURED_DATE] + ' ' + values[COLUMN_OCCURED_TIMES];
+        const SESSION_START_DATE_TIME = values[COLUMN_SESSION_START_DATE] + ' ' + values[COLUMN_SESSION_START_TIME];
+
+        if (!dataByParticipant[participantID].startTime) {
+            dataByParticipant[participantID].startTime = SESSION_START_DATE_TIME;
+        }
+
+        const eventType = values[COLUMN_TYPE].trim().toLowerCase();
+        if (!noteTypes.includes(eventType)) {
+            noteTypes.push(eventType);
+        }
+
+        dataByParticipant[participantID].events.push({
+            eventDetails: values[COLUMN_EVENT_DETAILS],
+            type: eventType,
+            timestamp: OCCURED_TIMESTAMP,
+            timestamp_ms: calculateTimeDifferenceInMs(SESSION_START_DATE_TIME, OCCURED_TIMESTAMP),
+            occured_timestamp: calculateTimeDifference(SESSION_START_DATE_TIME, OCCURED_TIMESTAMP),
+            observer: values[COLUMN_OBSERVER],
+        });
+    });
+
+    importedNotes = dataByParticipant;
+
+    updateNoteTypeDropdown();
+    loadNotesFromTSV();
+}

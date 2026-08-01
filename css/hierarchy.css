@@ -1,0 +1,116 @@
+body {
+    margin: 15px;
+    background-color: #f4f4f4;
+    font-family: Arial, sans-serif;
+}
+
+h3 {
+    color: #333;
+}
+
+#hierarchyDisplay {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tree-list ul {
+    list-style-type: none;
+    padding-left: 20px;
+    margin: 5px 0;
+}
+
+.tree-list li {
+    margin: 3px 0;
+    font-size: 14px;
+    color: #555;
+}
+
+.tree-list li.level-screen,
+.tree-list li.level-app,
+.tree-list li.level-interface {
+    font-weight: bold;
+    color: #222;
+    cursor: pointer;
+}
+
+.tree-list li.level-aoi {
+    font-weight: normal;
+    color: #007bff;
+    pointer-events: none;
+    cursor: default;
+}
+
+.tree-list li.collapsed>ul {
+    display: none;
+}
+
+.toggle-icon {
+    margin-right: 5px;
+    display: inline-block;
+    width: 12px;
+    text-align: center;
+}
+
+.toggle-icon.expanded::before {
+    content: '↳';
+}
+
+.toggle-icon.collapsed::before {
+    content: '→';
+}
+
+.filter-controls,
+.color-controls {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.filter-group,
+.color-group {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.filter-controls select,
+.filter-controls button,
+.color-controls input[type="radio"],
+.color-controls label {
+    padding: 5px 8px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background-color: white;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.color-controls input[type="radio"] {
+    margin-right: -5px;
+}
+
+.color-controls label {
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+}
+
+.filter-controls button {
+    margin-left: 15px;
+}
+
+#resetViewBtn {
+    background-color: #dc3545;
+    color: white;
+}
+
+.highlighted {
+    background-color: #fffde7;
+    border-left: 3px solid #ffd600;
+    padding-left: 5px;
+}

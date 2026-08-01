@@ -2,6 +2,50 @@ let backimage, cropimage;
 let Minimap;
 let SpatialBackground, SpatialMidground, SpatialForeground;
 let SpatialCanvas;
+let currVidLens = null;
+let highlighted_lenses = [];
+let visible_lenses = [];
+let lensColorMap = {};
+
+function highlightLensesById(arrayOfIds) {
+    highlighted_lenses = []; // clear previous highlights
+    if (!arrayOfIds || arrayOfIds.length === 0) {
+        background_changed = true;
+        return;
+    }
+
+    // finding the index for each lens ID
+    for (const id of arrayOfIds) {
+        const lensIndex = base_lenses.findIndex(lens => lens.id === id);
+        if (lensIndex !== -1) {
+            highlighted_lenses.push(lensIndex);
+        }
+    }
+    background_changed = true; // trigger a redraw
+}
+
+function setVisibleLenses(arrayOfIds, colorMap = null) {
+    visible_lenses = [];
+    
+    if (arrayOfIds && arrayOfIds.length > 0) {
+        for (const id of arrayOfIds) {
+            const lensIndex = base_lenses.findIndex(lens => lens.id === id);
+            if (lensIndex !== -1) {
+                visible_lenses.push(lensIndex);
+            }
+        }
+    }
+
+	if (colorMap) {
+        lensColorMap = colorMap;
+		console.log('if colorMap', lensColorMap);
+    } else {
+        lensColorMap = {};
+		console.log('else colorMap', lensColorMap);
+    }
+
+    background_changed = true;
+}
 
 let spatialsketch = (p) => {
 	let f = {
@@ -52,7 +96,7 @@ let spatialsketch = (p) => {
 				find_note(p, X, Y);
 				if(selected_note == -1){
 					view_panel(4);
-					new_note(X+OFFSET_X, Y+OFFSET_Y);
+					new_note(X+OFFSET_X, Y+OFFSET_Y, "", "", "N/A" , "00:00:00:00", 0, "00:00:00:00", "N/A", true, true);
 				}				
 			}else{
 				find_lens(X, Y);
@@ -153,16 +197,26 @@ let spatialsketch = (p) => {
 							tmin = twi.tmin; tmax = twi.tmax; 
 						}							
 						else {
-							tmin = data.tmin; tmax = data.tmax; 
+							tmin = data.tmin; tmax = data.tmax;
 						}							
-						fixs = data.fixs;
+						fixs = TIMELINE_HIGHLIGHT.fixs;
+						tmin = TIMELINE_HIGHLIGHT.tmin
+						tmax = TIMELINE_HIGHLIGHT.tmax
+
+						const cursor_pixel_width = (TIMELINE_MOUSEOVER_WINDOW*1000)/(tmax-tmin) * (spatial_width-300);
+						let timeline_left_px = Math.max(200, Math.min(TIMELINE.mouseX - cursor_pixel_width/2, 200 + (spatial_width-300) - cursor_pixel_width));
+						let timeline_right_px = Math.min(timeline_left_px + cursor_pixel_width, p.width-100);
+
+						let t_left = ((timeline_left_px - 200) / (spatial_width-300)) * (tmax - tmin) + tmin;
+						let t_right = ((timeline_right_px - 200) / (spatial_width-300)) * (tmax - tmin) + tmin;
+						
 						v = (TIMELINE.mouseX - 200)/(spatial_width-300)*(tmax-tmin) + tmin;
 						p.stroke( cy(90, data.group) ); 
 						p.strokeWeight(2);
 						if(twi_id > 0) {
 							for(let j=twi.j_min; j<twi.j_max-1; j++){
 								let jt = fixs[j].t;
-								if( jt > v && jt - v < TIMELINE_MOUSEOVER_WINDOW*1000 ){
+								if( jt >= t_left && jt < t_right ){
 									p.line( fixs[j].x*pos_ratio+ground_x, fixs[j].y*pos_ratio+ground_y, fixs[j+1].x*pos_ratio+ground_x, fixs[j+1].y*pos_ratio+ground_y );
 								}else if( jt - v > TIMELINE_MOUSEOVER_WINDOW*1000 ){ j = twi.j_max;}
 							}
@@ -170,7 +224,7 @@ let spatialsketch = (p) => {
 						else {
 							for(let j=0; j<fixs.length-1; j++){
 								let jt = fixs[j].t;
-								if( jt > v && jt - v < TIMELINE_MOUSEOVER_WINDOW*1000 ){
+								if( jt >= t_left && jt < t_right ){
 									p.line( fixs[j].x*pos_ratio+ground_x, fixs[j].y*pos_ratio+ground_y, fixs[j+1].x*pos_ratio+ground_x, fixs[j+1].y*pos_ratio+ground_y );
 								}else if( jt - v > TIMELINE_MOUSEOVER_WINDOW*1000 ){ j = fixs.length;}
 							}
@@ -334,16 +388,59 @@ let spatialsketch = (p) => {
 		// lenses 
 		if( SHOW_LENS ){
 			for(let i=0; i<order_lenses.length; i++){
-				let l = base_lenses[order_lenses[i]];
-				p.fill(l.col(20)); p.stroke(l.col(60)); p.strokeWeight(2);
-				if( building_lens_id==order_lenses[i] || selected_lens==order_lenses[i]){
-					p.fill(l.col(20)); p.stroke(l.col(75)); p.strokeWeight(5);
+				let lens_index = order_lenses[i];
+				if (visible_lenses.length > 0 && !visible_lenses.includes(lens_index)) {
+            		continue; 
+        		}
+
+				let l = base_lenses[lens_index];
+
+				let currentFill = l.col(20);
+				let currentStroke = l.col(60);
+				let currentWeight = 2;
+
+				// check if this lens has a color mapping
+				if (lensColorMap[l.id]) {
+					currentFill = lensColorMap[l.id];
+					currentStroke = darkenColor(lensColorMap[l.id], 20);
+					currentWeight = 7;
 				}
-				l.draw(p, building_lens_id==order_lenses[i],
-					selected_lens==order_lenses[i],
+				// highlighting logic
+				if (highlighted_lenses.includes(lens_index)) {
+					currentFill = l.col(40);
+					currentWeight = 6;
+				} else if (building_lens_id === lens_index || selected_lens === lens_index) {
+					currentFill = l.col(20);
+					currentStroke = l.col(75);
+					currentWeight = 5;
+				}
+
+				p.noFill();
+				p.stroke(currentStroke);
+				p.strokeWeight(currentWeight);
+
+				l.draw(p, building_lens_id === lens_index,
+					selected_lens === lens_index,
 					spatial_width, spatial_height);
 			}
 		}
+		if (selected_data != -1 && VIDEOS[selected_data] != null && VIDEOS[selected_data] != undefined && VIDEOS[selected_data].coords) {
+			if (currVidLens == null) {
+				currVidLens = new VidRectLens(VIDEOS[selected_data].coords[0].x1,VIDEOS[selected_data].coords[0].y1);
+				currVidLens.add(VIDEOS[selected_data].coords[0].x2, VIDEOS[selected_data].coords[0].y2);
+				currVidLens.draw(p,false,false, spatial_width, spatial_height);
+			} else {
+				currVidLens.draw(p,false,false, spatial_width, spatial_height);
+			}
+			if (toggleVideoLensButton == null && currVidLens != null) {
+				toggleVideoLensButton = p.createButton('Toggle Video Lens');
+				toggleVideoLensButton.mousePressed(() => {
+					currVidLens.toggleVisibility();
+				});
+				toggleVideoLensButton.parent("selectfileinput");
+			}
+		}
+
 	};
 	
 	p.keyPressed = () => {
@@ -402,7 +499,7 @@ let spatialsketch = (p) => {
 		if(height_changed) {
 			//update height
 			document.getElementById('pj1').style.height = Math.floor(spatial_height)+'px';
-			document.getElementById('canvas_box').style.height = Math.floor(p.windowHeight * CANVAS_BOX_HEIGHT_PERCENTAGE)+'px';
+			document.getElementById('canvas_box').style.height = Math.floor(spatial_height + timeline_canvas_height)+'px';
 		}
 		
 		p.resizeCanvas(Math.floor(spatial_width), Math.floor(spatial_height));		
@@ -440,18 +537,19 @@ let draw_fixs_by_twi = (canvas, data, group, twi, fixs) => {
 	for(let j = twi.j_min, seq=0; j<twi.j_max && (fixs[j].t - twi.tmin)/longest_duration < TIME_ANIMATE; j++,seq++){
 		if(fixs[j] != undefined && (fixs[j].t - twi.tmin)/longest_duration < TIME_ANIMATE){
 			let size = Math.exp(FIX_SIZE);
+			let baseAlpha = 100*Math.exp(FIX_ALPHA);
 			if(FIXS_SATURATION && legval == -1 || legval == group-1) {
-				let val = 75.5*seq/max_val + 30.0; //interpolation of transparency (saliency) in desired alpha range (30.0, 105.5)  
+				let val = baseAlpha * (0.3 + 0.7*seq/max_val); //scales the sequence gradient by the opacity slider instead of a fixed range
 				canvas.noStroke();
 				if(seq == 0)
-					canvas.fill( cy(105.5, 5)); 
+					canvas.fill( cy(Math.min(baseAlpha*1.05, 100), 5)); 
 				else if(seq == max_val)
-					canvas.fill( cy(val, 14)); 			 
+					canvas.fill( cy(val, 14)); 	 
 				else
 					canvas.fill( cy(val, group)); 
 			}
 			else {
-				canvas.fill(cy(100*Math.exp(FIX_ALPHA), group)); canvas.noStroke();
+				canvas.fill(cy(baseAlpha, group)); canvas.noStroke();
 			}
 			
 			canvas.ellipse(fixs[j].x * pos_ratio + ground_x, fixs[j].y * pos_ratio + ground_y,
@@ -505,6 +603,7 @@ let draw_fixs = (canvas) => {
 	}catch (error) { console.error(error); background_changed = true; }
 };
 
+
 function compute_hit_any_aoi_rate_by_twi(HAAR, data, group, twi, fixs){
 	for(let j = twi.j_min; j<twi.j_max; j++){
 		if(fixs[j] != undefined){
@@ -525,6 +624,8 @@ function compute_hit_any_aoi_rate(){
 			//filter by twi_mode		
 			let data = DATASETS[v]; let fixs = data.fixs; 
 			let group = DATASETS[v].group;
+
+			// assign_fixations_to_lenses(fixs, lenses);
 
 			//filter fixations by TWI_MODE
 			if(TWI_MODE == 2 && selected_twi != -1 && data.tois[data.toi_id] != undefined && data.tois[data.toi_id].included) {
@@ -731,8 +832,8 @@ let draw_saccade_by_twi = (canvas, sacs, data, group, toi, longest_duration, new
 					canvas.noFill(); canvas.strokeWeight(coef_splat[splat]);
 					if(COLOUR_MODE == "group"){ 
 						if(SACC_SATURATION && legval == -1 || legval == group-1) {
-							canvas.strokeWeight(3);							
-							let val = 25.5*seq/max_val + 3.0; //interpolation of transparency (saliency) in desired alpha range (3.0, 25.5)  
+							canvas.strokeWeight(coef_splat[splat] * 0.5);
+							let val = Math.min(coef_weight[splat] * (1.1 + 0.4*seq/max_val), 100);
 							canvas.stroke( cy(val, group)); 
 						}
 						else {
@@ -764,7 +865,7 @@ let draw_saccade_by_twi = (canvas, sacs, data, group, toi, longest_duration, new
 		for(let j = toi.j_min, seq=0; j<toi.j_max && (data.fixs[j].t - toi.tmin)/longest_duration < TIME_ANIMATE; j++,seq++){
 			if(data.fixs[j] != undefined && (data.fixs[j].t - toi.tmin)/longest_duration < TIME_ANIMATE){				
 	
-				if(FIXS_SATURATION && legval == -1 || legval == group-1) {
+				if( legval == -1 || legval == group-1) {
 					//draw text label
 					canvas.strokeWeight(0);
 					canvas.fill(black(100));
@@ -776,7 +877,6 @@ let draw_saccade_by_twi = (canvas, sacs, data, group, toi, longest_duration, new
 					}						
 					else if(seq%5 == 0 || seq+1 == toi.j_max)
 						canvas.text( num_format(seq, 2), data.fixs[j].x * pos_ratio + ground_x-7, data.fixs[j].y * pos_ratio + ground_y+7);
-					console.log("text size: "+textsize+", data.fixs_size: "+FIX_SIZE);
 					canvas.textSize(f.fontSize);
 					canvas.strokeWeight(1);				
 				}				
@@ -784,6 +884,7 @@ let draw_saccade_by_twi = (canvas, sacs, data, group, toi, longest_duration, new
 		}
 	}
 };
+
 let draw_sacs = (canvas) => {
 	filter_saccades();
 	coef_weight = [];
@@ -959,9 +1060,12 @@ let compute_fore_list = () => {
 		  
 		// construct relevance list with all three sets of locations
 		FORE_LIST = [];
+				// Before FORE_LIST.push:
+		t0 = DATASETS[selected_data].tmin;
+		t1 = DATASETS[selected_data].tmax;
 		for(let i = 0; i<fixs_list.length; i++){
 			for(let j = 0; j<fixs_list[i].length - 1; j++){
-				if( fixs_list[i][j].t > toi_list[i].tmin && fixs_list[i][j].t < toi_list[i].tmax){
+				if( fixs_list[i][j].t > t0 && fixs_list[i][j].t < t1){
 					before = j<fixs_list[i].length-1 && fixs_list[i][j+1].in_selected;
 					now = fixs_list[i][j].in_selected;
 					after = j>0 && fixs_list[i][j-1].in_selected;
@@ -970,14 +1074,19 @@ let compute_fore_list = () => {
 						
 						lens_bin = Math.floor(lens_bins*(Math.PI+Math.atan2(l.centy-OFFSET_Y-fixs_list[i][j].y, l.centx-OFFSET_X-fixs_list[i][j].x))/SPATIAL.TWO_PI) % lens_bins;
 						angle = SPATIAL.TWO_PI*((lens_bin+0.5)/lens_bins);
-						time_bin = Math.floor( time_bins * (fixs_list[i][j].t -toi_list[i].tmin) / (toi_list[i].tmax - toi_list[i].tmin) ) % time_bins;
+						time_bin = Math.floor(time_bins * (fixs_list[i][j].t - t0) / (t1 - t0));
+						time_bin = Math.max(0, Math.min(time_bins - 1, time_bin)); // Clamp to valid range
 						lens_vals[lens_bin] += 0.75*s;
 						time_vals[time_bin] += 0.75*s;
+
+				
+						//let max_bin_value = Math.max(time_vals);
+						//let normalized_height = (time_vals[time_bin] / max_bin_value) * max_display_height;
 						
 						FORE_LIST.push({fix:fixs_list[i][j], before:before, after:after, size:s,
 								spatial_x:fixs_list[i][j].x * pos_ratio + ground_x, spatial_y:fixs_list[i][j].y * pos_ratio + ground_y,
 								lens_x: (l.centx-OFFSET_X) * pos_ratio + ground_x + lens_vals[lens_bin]*Math.cos(angle), lens_y: (l.centy-OFFSET_Y) * pos_ratio + ground_y  + lens_vals[lens_bin]*Math.sin(angle),
-								time_x: (time_bin * (spatial_width-200))/time_bins + 100, time_y: spatial_height - time_vals[time_bin]
+								time_x:(time_bin * (spatial_width-300))/time_bins + 200, time_y: spatial_height - time_vals[time_bin]
 								});
 						
 						lens_vals[lens_bin] += 0.75*s;
@@ -991,6 +1100,7 @@ let compute_fore_list = () => {
 		
 	}catch (error) { console.error(error); foreground_changed = true; }
 };
+
 
 SPLIT_STATE = [1.0, 0.0, 0.0]; STEPS = 20;
 
@@ -1157,38 +1267,38 @@ let do_aoi_transition_overlay = (p, data, fixs, toi, isSpaceView, callback) => {
 
 				if( fixs[j].firstlens < lenses.length && 
 					before < ORDERLENSEGROUPIDARRAYINDEX.length && 
-					lenses[fixs[j].firstlens].group == LENSEGROUPS[ORDERLENSEGROUPIDARRAYINDEX[before]].group
+					metric_lenses[fixs[j].firstlens].group == LENSEGROUPS[ORDERLENSEGROUPIDARRAYINDEX[before]].group
 					){ // must start in before state
 						
 					q1 = j; // record last in before state
 					while( j<fixs.length - 1 && 
-						fixs[j+1].firstlens < lenses.length &&
-						(lenses[fixs[j+1].firstlens].group == LENSEGROUPS[ORDERLENSEGROUPIDARRAYINDEX[before]].group || 
-						fixs[j+1].firstlens == lenses.length) ) // advance through before||none, record last before	
+						fixs[j+1].firstlens < metric_lenses.length &&
+						(metric_lenses[fixs[j+1].firstlens].group == LENSEGROUPS[ORDERLENSEGROUPIDARRAYINDEX[before]].group || 
+						fixs[j+1].firstlens == metric_lenses.length) ) // advance through before||none, record last before	
 					{ 
 						j++; 
 						if(fixs[j].firstlens == before){ q1=j; } 
 					} 			
 					if( j<fixs.length - 1 && 
-						fixs[j+1].firstlens < lenses.length && 
-						lenses[fixs[j+1].firstlens].group == LENSEGROUPS[ORDERLENSEGROUPIDARRAYINDEX[middle]].group
+						fixs[j+1].firstlens < metric_lenses.length && 
+						metric_lenses[fixs[j+1].firstlens].group == LENSEGROUPS[ORDERLENSEGROUPIDARRAYINDEX[middle]].group
 						){ // next element must be from middle state
 						j++;
 						if(fixs[j+1] == undefined)
 							continue;
 						q2 = j; q3 = j; // record first and last in the middle state
 						while( j<fixs.length - 1 && 
-							fixs[j+1].firstlens < lenses.length && 
-							(lenses[fixs[j+1].firstlens].group == LENSEGROUPS[ORDERLENSEGROUPIDARRAYINDEX[middle]].group || fixs[j+1].firstlens == lenses.length) ){ 
+							fixs[j+1].firstlens < metric_lenses.length && 
+							(metric_lenses[fixs[j+1].firstlens].group == LENSEGROUPS[ORDERLENSEGROUPIDARRAYINDEX[middle]].group || fixs[j+1].firstlens == metric_lenses.length) ){ 
 							j++; 
 							if(fixs[j+1] == undefined)
 								continue;
-							if(lenses[fixs[j].firstlens].group == LENSEGROUPS[ORDERLENSEGROUPIDARRAYINDEX[middle]].group){ q3=j; } 
+							if(metric_lenses[fixs[j].firstlens].group == LENSEGROUPS[ORDERLENSEGROUPIDARRAYINDEX[middle]].group){ q3=j; } 
 						} // advance through middle||none, record last middle
 						if( j<fixs.length - 1 && 
 							fixs[j+1].t < toi.tmax && 
-							fixs[j+1].firstlens < lenses.length && 
-							lenses[fixs[j+1].firstlens].group == LENSEGROUPS[ORDERLENSEGROUPIDARRAYINDEX[after]].group
+							fixs[j+1].firstlens < metric_lenses.length && 
+							metric_lenses[fixs[j+1].firstlens].group == LENSEGROUPS[ORDERLENSEGROUPIDARRAYINDEX[after]].group
 						)
 						{ // then must go to final state;
 
@@ -1742,3 +1852,17 @@ let do_matrix_overlay = (p) => {
 		aggregate_histogram_across_dat_twi(p, data, true, null);
 	}
 };
+
+function darkenColor(colorHex, percent) {
+    let r = parseInt(colorHex.substring(1, 3), 16);
+    let g = parseInt(colorHex.substring(3, 5), 16);
+    let b = parseInt(colorHex.substring(5, 7), 16);
+
+    r = Math.floor(r * (100 - percent) / 100);
+    g = Math.floor(g * (100 - percent) / 100);
+    b = Math.floor(b * (100 - percent) / 100);
+
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
+
+

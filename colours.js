@@ -6,10 +6,10 @@ SACC_TYPES = ["#99f3ff","#1ae4ff","#fbfd7c"]; // short, basic, glance
 DIRECTIONS = ["#dd4646","#dbd643","#a3dd36","#3dd664","#41d8d8","#4368d6","#8a3dd6","#d83bb1"];
 TWIS_COLOURS = ["#dd4646","#dbd643","#a3dd36","#3dd664","#41d8d8","#4368d6","#8a3dd6","#d83bb1","#f3d1aa","#ffffff",
 "#8dd3c7", "#ffffb3", "#bebada", "#fb8072", "#80b1d3", "#fdb462", "#b3de69", "#fccde5", "#d9d9d9", "#bc80bd"];
-LENS_COLOURS = ["#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6", "#6a3d9a",
-"#7f7f7f", "#bcbd22", "#17becf","#98e2bb","#f3d1aa","#fdaaf3","#fbffc2","#ecacac","#a1b7f7","#dbd643"];
+LENS_COLOURS = ["#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6", "#6a3d9a", "#7f7f7f", "#bcbd22", "#17becf", "#98e2bb", "#f3d1aa", "#fdaaf3", "#fbffc2", "#ecacac", "#a1b7f7", "#dbd643", "#8dd3c7", "#ffffb3", "#bebada", "#fb8072", "#80b1d3", "#fdb462", "#b3de69", "#fccde5", "#d9d9d9", "#bc80bd", "#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6", "#6a3d9a", "#7f7f7f", "#bcbd22", "#17becf", "#98e2bb", "#f3d1aa", "#fdaaf3", "#fbffc2", "#ecacac", "#a1b7f7", "#dbd643", "#8dd3c7", "#ffffb3", "#bebada", "#fb8072", "#80b1d3", "#fdb462", "#b3de69", "#fccde5", "#d9d9d9", "#bc80bd"];
 ORDERED = ["#e9741c","#ffff7c","#74f05c"]; // before, middle, after
 MATCOL = ["#FFFFFF","#cb181d","#2171b5"];
+OBSERVERS = ["#8dd3c7","#ffffb3","#bebada","#fb8072","#80b1d3","#fdb462","#b3de69","#fccde5"];
 WHITE = '#FFFFFF'; GREY = '#888888'; DARK="#BBBBBB"; BLACK = '#000000';
 SELECTED = '#00FF00'; // the colour we use when an item is selected, currently green
 SACC_GRP = []; SACC_COUNT = []; // for sacc export
@@ -18,13 +18,14 @@ FIXS_SATURATION = true;
 
 function update_selector_colours(){
 	for(i=0; i< GROUPINGS.length; i++){ document.getElementById('basic_'+i).value = GROUPINGS[i]; }
-	for(i=0; i< LENS_COLOURS.length; i++){ document.getElementById('aoic_'+i).value = LENS_COLOURS[i]; }
+	generateAOIColorControls();
 	for(i=0; i< TWIS_COLOURS.length; i++){ document.getElementById('twic_'+i).value = TWIS_COLOURS[i]; }
 	for(i=0; i< DIRECTIONS.length; i++){ document.getElementById('dir_'+i).value = DIRECTIONS[i]; }
 	for(i=0; i< SACC_TYPES.length; i++){ document.getElementById('sacc_'+i).value = SACC_TYPES[i]; }
 	for(i=0; i< ORDERED.length; i++){ document.getElementById('order_'+i).value = ORDERED[i]; }
 	for(i=0; i< MATCOL.length; i++){ document.getElementById('matrix_'+i).value = MATCOL[i]; }
-	update_group_colors(); update_filter_colors(); update_lens_colors(); 
+	for(i=0; i< OBSERVERS.length; i++){ document.getElementById('obsv_'+i).value = OBSERVERS[i]; }
+	update_group_colors(); update_filter_colors(); update_lens_colors();
 }
 
 function qq(x){ return Math.floor( Math.min(255, Math.max(0, x)) ); }
@@ -81,7 +82,7 @@ function matrix_mix_stepped(a, b, maxval, alpha){
 }
 
 function update_colour_vals(){
-	update_filter_colors(); update_group_colors(); make_dynamic_legend(); update_lens_colors(); 
+	update_filter_colors(); update_group_colors(); make_dynamic_legend(); update_lens_colors();
 	background_changed = true;
 }
 function update_filter_colors(){
@@ -96,13 +97,116 @@ function update_group_colors(){
 		document.getElementById(val+"_drag").style.backgroundColor = GROUPINGS[ (DATASETS[val].group - 1) % GROUPINGS.length ];
 	}
 }
+
+let manualObserverElement = null;
+function update_observer_colors() {
+    for (var i = 0; i < document.getElementById("notelist").children.length; i++) {
+        let child = document.getElementById("notelist").children[i];
+        let childId = child.id;
+
+        if (childId && childId.startsWith("note_")) {
+            let val = parseInt(childId.split("_")[1]); // Declare `val` here
+            let textContent = document.getElementById("note_" + val + "_note_observer").textContent;
+            let observerName = textContent.split('Note Taker:')[1].trim();			
+			manualObserverElement = document.getElementById("note_" + val + "manual_note_observer");
+
+			if(manualObserverElement && manualObserverElement != "") {
+				observers[manualObserverElement.value] = OBSERVERS[observerColourIndex];
+			}
+
+            let dragger = child.querySelector(".data_dragger");
+
+            if (dragger) {
+				if(observerName) {
+					dragger.style.height = "78px";
+					dragger.style.backgroundColor = observers[observerName];
+					dragger.style.border = `8.5px solid ${observers[observerName]}`;
+					dragger.style.display = "block";
+				} else if (manualObserverElement) {
+					dragger.style.height = "78px";
+					dragger.style.backgroundColor = observers[manualObserverElement.value];
+					dragger.style.border = `8.5px solid ${observers[manualObserverElement.value]}`;
+					dragger.style.display = "block";					
+				}
+            } else {
+                console.warn(`data_dragger not found for note_${val}`);
+            }
+        } else {
+            console.warn("Invalid or missing ID for child:", child);
+        }
+    }
+}
+function updateTypeColors() {
+	for (var i = 0; i < document.getElementById("notelist").children.length; i++) {
+		let child = document.getElementById("notelist").children[i];
+		let childId = child.id;
+
+		if (childId && childId.startsWith("note_")) {
+			let val = parseInt(childId.split("_")[1]);
+			let textContent = document.getElementById("note_" + val + "_note_type").textContent;			
+			let typeName = textContent.split('Note Type:')[1].trim();
+			
+			if (!event_colour_map[typeName]) {
+				console.error(`Color not found for type '${typeName}'.`);
+				continue;
+			}
+
+			let dragger = child.querySelector(".data_dragger");
+
+			if (dragger) {
+				dragger.style.height = "78px";
+				dragger.style.backgroundColor = event_colour_map[typeName];
+				dragger.style.border = `8px solid ${event_colour_map[typeName]}`;
+				dragger.style.display = "block";
+			} else {
+				console.warn(`data_dragger not found for note_${val}`);
+			}
+		} else {
+			console.warn("Invalid or missing ID for child:", child);
+		}
+	}
+}
+function updateDefaultNoteColors() {
+	for (var i = 0; i < document.getElementById("notelist").children.length; i++) {
+		let child = document.getElementById("notelist").children[i];
+		let childId = child.id;
+
+		if (childId && childId.startsWith("note_")) {
+			let val = parseInt(childId.split("_")[1]);
+			let dragger = child.querySelector(".data_dragger");
+
+			if (dragger) {
+				dragger.style.height = "78px";
+				dragger.style.backgroundColor = "#696b6a";
+				dragger.style.border = "8px solid #696b6a";
+				dragger.style.display = "block";
+			} else {
+				console.warn(`data_dragger not found for note_${val}`);
+			}
+		} else {
+			console.warn("Invalid or missing ID for child:", child);
+		}
+	}
+}
 function update_lens_colors(){
 	for(var i=0;i<document.getElementById('lenslist').children.length;i++){
 		val = parseInt(document.getElementById('lenslist').children[i].id.split('_')[1]);		
-			if(TIME_DATA=='all') 
+			if(TIME_DATA=='all') {				
 				document.getElementById(val+"_dragger").style.backgroundColor = 'rgba('+rgbColor(LENS_COLOURS[val%LENS_COLOURS.length])+', .75)';
-			else 
+				document.getElementById('aoi_color_group_controls').style.display = "none";
+				document.querySelectorAll('[id^="aoigc_"]').forEach(el => {
+					el.style.display = "none";
+				});
+				generateAOIColorControls();
+			} 
+			else{
 				document.getElementById(val+"_dragger").style.backgroundColor = 'rgba('+rgbColor(LENS_COLOURS[(base_lenses[val].group - 1)%LENS_COLOURS.length])+', .75)';
+				document.getElementById('aoi_color_controls').style.display = "none";
+				document.querySelectorAll('[id^="aoic_"]').forEach(el => {
+					el.style.display = "none";
+				});
+				generateGroupAOIColorControls();
+			}
 		timeline_changed = true;
 		matrix_changed = true;
 	}
@@ -270,4 +374,84 @@ function contrastRatioPair(col1, col2) {
 function contrast_bw(colour){
 	var textcol = ['#000000', '#ffffff']
 	return contrastRatioPair(colour, textcol[0])>contrastRatioPair(colour, textcol[1])? textcol[0]:textcol[1]
+}
+
+function generateAOIColorControls() {
+	// Potentially changeable to if order_lenses.length != base_lenses.length then do following, if not then use order_lenses to get indexes
+	const container = document.getElementById('aoi_color_controls');
+	container.style.display = "block";
+	document.querySelectorAll('[id^="aoic_"]').forEach(el => {
+		el.style.display = "block";
+	});
+	container.innerHTML = "<p>AOI Colours:</p>";
+	const startingIndex = order_lenses[0];
+
+	const inputFirst = document.createElement("input");
+	inputFirst.type = "color";
+	inputFirst.id = `aoic_${startingIndex}`;
+	inputFirst.className = "colorer";
+	inputFirst.value = LENS_COLOURS[startingIndex] || "#ffffff";
+
+	console.log("Input color for startingIndex", startingIndex, ":", inputFirst.value);
+
+	inputFirst.oninput = function () {
+		LENS_COLOURS[startingIndex] = this.value;
+		update_colour_vals();
+
+		// Update duplicate color inputs if needed (use exact match!)
+		const el = document.getElementById(`aoic_${startingIndex}`);
+		if (el && el !== this) el.value = this.value;
+	};
+
+	container.appendChild(inputFirst);
+
+	const el = document.getElementById(`aoic_${startingIndex}`);
+	if (el && el !== inputFirst) el.value = inputFirst.value;
+
+	for (let i = 0; i < base_lenses.length; i++) {
+		if (i === startingIndex) continue;
+
+		const input = document.createElement("input");
+		input.type = "color";
+		input.id = `aoic_${i}`;
+		input.className = "colorer";
+		input.value = LENS_COLOURS[i] || "#ffffff";
+
+		input.oninput = function () {
+			LENS_COLOURS[i] = this.value;
+			update_colour_vals();
+
+			const el = document.getElementById(`aoic_${i}`);
+			if (el && el !== this) el.value = this.value;
+		};
+
+		container.appendChild(input);
+
+		document.querySelectorAll(`#aoic_${i}`).forEach(el => {
+			if (el !== input) el.value = input.value;
+		});
+	}
+}
+
+function generateGroupAOIColorControls() {
+	const container = document.getElementById('aoi_color_group_controls');
+	container.style.display = "block";
+	container.innerHTML = "<p>AOI Group Colours:</p>";
+
+	const groups = [...new Set(base_lenses.map(lens => lens.group).filter(g => g !== 0))];
+
+	for (const group of groups) {
+		const input = document.createElement("input");
+		input.type = "color";
+		input.id = `aoigc_${group}`;
+		input.className = "colorer";
+		input.value = LENS_COLOURS[(group - 1) % LENS_COLOURS.length] || "#ffffff";
+
+		input.oninput = function () {
+			LENS_COLOURS[(group - 1) % LENS_COLOURS.length] = this.value;
+			update_colour_vals();
+		};
+
+		container.appendChild(input);
+	}
 }

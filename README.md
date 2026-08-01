@@ -24,6 +24,8 @@ Please reference using the reference below:
 }
 
 ## Used by
+Zhang, Y., Athukorala, N., Liang, Z., Qiao, Y., -, S., Yio, Y. X., Lawrence, L., Tag, B., Vered, M., Wybrow, M., & Goodwin, S. (2025). Streamlining Eye-Tracking and Observational Data for Field Study Visual Analysis. In Proceedings of the 2025 Symposium on Eye Tracking Research and Applications (pp. 1-9).
+
 Vriend, S. A., Vidyapu, S., Rama, A., Chen, K. T., & Weiskopf, D. (2024, June). Which Experimental Design is Better Suited for VQA Tasks?: Eye Tracking Study on Cognitive Load, Performance, and Gaze Allocations. In Proceedings of the 2024 Symposium on Eye Tracking Research and Applications (pp. 1-7).
 
 Wang, Y., Jiang, Y., Hu, Z., Ruhdorfer, C., Bâce, M., Bulling, A. (2024, June). VisRecall++: Analysing and Predicting Visualisation Recallability from Gaze Behaviour. in Proceedings of the ACM on Human-Computer Interaction (PACM HCI), vol. 8, no. ETRA, Art. 239.
@@ -39,15 +41,25 @@ Cai, M., Zheng, B., & Demmans Epp, C. (2022, July). Towards Supporting Adaptive 
 
 ## Requirements
   * This repository
-  * Python 3.5 or above (web server scripting)
+  * Python 3.13 or above (For web server scripting)
 
 ## Tutorial
+
+### Getting Started With Gazealytics
 There are some videos for getting started with Gazealytics (whose previous release was named as webVETA).
 
   * The [features video](https://www.youtube.com/watch?v=TihdrjG0B8g&feature=youtu.be) of Gazealytics
   * The [setup video](https://www.youtube.com/watch?v=-vfOij3I3tc) which describes how to set up AOIs, TWIs, workspace etc
   * Example use case: [Group-level analysis using AOIs, fixations and Matrix tools](https://www.youtube.com/watch?v=00l1PMzEEx8)
   * Example use case: [Group-level analysis using scan paths](https://www.youtube.com/watch?v=LcieFoK3kh8)
+
+### Time-Based Notes
+If you're working with **time-based notes**, follow these steps to ensure they are correctly uploaded in Gazealytics:  
+
+1️⃣ Go to the **Samples** tab and upload [Participant Data - P2.tsv](https://drive.google.com/drive/u/0/folders/1y0CVFFjW5MneZeart9FZ22gTXqVKLvsk)  
+2️⃣ Next, navigate to the **Notes** tab and upload [Notes.tsv](https://drive.google.com/drive/u/0/folders/1y0CVFFjW5MneZeart9FZ22gTXqVKLvsk)  
+
+Once uploaded, Gazealytics will integrate the notes with gaze data in the notes as well as the timeline, making it easier to analyze participant behavior over time.
 
 More details can be found in Gazealytics paper: https://arxiv.org/pdf/2303.17202.pdf
 
@@ -60,6 +72,7 @@ the [Needleman-Wunsch algorithm](https://www.sciencedirect.com/science/article/p
   * Interactively achieving more suitable AOI definitions by improving AOI uncertainty metric, e.g., [hit-any-AOI-rate](https://dl.acm.org/doi/pdf/10.1145/3517031.3531166); 
   * [Saccade bundling](https://ieeexplore.ieee.org/abstract/document/6065028); usage: reduce visual clutter and better reveal scan path patterns  
   * [Matrix reordering](https://inria.hal.science/hal-01326759/document); usage: reveal visual patterns of fixations, saccades, scanpath based on similarity of individual or their group-level metrics. 
+  * Time-based Notes; usage: annotations linked to specific points in time are added as notes and bookmarks in the timeline.
 
 ## Visual analysis examples
 The examples below are meant to showcase Gazealytics's capabilities as a unified and flexible visual eye tracking analytics toolkit. It is ready to be integrated into users' existing data analysis workflow.
@@ -157,6 +170,7 @@ time window of interest (TWI)-AOIs
  * Load previously saved Gazealytics project files by clicking on "Load Project" - [Torus-wrapping graphs](https://arxiv.org/abs/2303.17066): [saved zip file-1](https://osf.io/kwve2), [saved zip file-2](https://osf.io/sc6by) 
  * Start from importing raw gaze sequence by clicking on "Load .tsv" and "Load background": [.tsv files and reference images](https://osf.io/au3bj/files/osfstorage)
  * Other saved project files and raw data: [Torus-wrapping graphs](https://osf.io/au3bj/)
+ * Time-based notes sample dataset: [.tsv files for notes](https://drive.google.com/drive/u/0/folders/1y0CVFFjW5MneZeart9FZ22gTXqVKLvsk)
 
 ## Development
 To run Gazealytics from its source code simply run the following:
@@ -168,7 +182,7 @@ conda install -c conda-forge py
 conda install -c conda-forge numpy
 conda install -c conda-forge pyopencl 
 conda install -c conda-forge pocl
-<the path to python3.7 binary> <the path to server.py>
+<the path to python3.13 binary> <the path to server.py>
 ```
 
 This starts a server in development mode at http://localhost:8080/.
@@ -185,6 +199,9 @@ Past developers:
   * Joshua Langmead (Monash University)
   * Ishwari Bhade (Monash University)
   * Ryan T Whitelock-Jones (Monash University)
+  * Yu Xuan Yio (Monash University)
+  * Nethara Athukorala (Monash University)
+  * Christian Moore (Monash University)
 
 Main contributors:
   * Kun-Ting Chen (Centre for Research on Engineering Software Technologies, University of Adelaide)
@@ -196,6 +213,10 @@ Main contributors:
   * Christophe Hurter (ENAC, Université de Toulouse)
   * Daniel Weiskopf (University of Stuttgart)
   * Sarah Goodwin (Monash University)
+  * Yu Xuan Yio (Monash University)
+  * Yidan Zhang (Monash University)
+  * Renee McMillan (Monash University)
+  * Greg Putra (Monash University)
 
 ## License
 Gazealytics is provided under the MIT License.

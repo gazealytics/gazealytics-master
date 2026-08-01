@@ -1,12 +1,10 @@
-
 // useful constants
-
 SPATIAL_CANVAS_WIDTH_PERCENTAGE = 0.525; // percentage of the browser innerWidth
 SPATIAL_CANVAS_HEIGHT_PERCENTAGE = 0.7; // percentage of the browser innerHeight
 CANVAS_BOX_HEIGHT_PERCENTAGE = 0.97; // percentage of the browser innerHeight
 MATRIX_CENTER_WIDTH_PERCERTAGE_OVER_INTERFACE_LAYOUT = 38; // percentage of the matrix center of the interface layout
 INTERFACE_LAYOUT_OVER_WINDOWS_WIDTH = 0.88; // percentage of interface_layout width over windows
-RESIZE_CONTROL_PADDING = 30; 
+RESIZE_CONTROL_PADDING = 5; 
 
 spatial_width = window.innerWidth * SPATIAL_CANVAS_WIDTH_PERCENTAGE;
 spatial_height = window.innerHeight * SPATIAL_CANVAS_HEIGHT_PERCENTAGE;
@@ -30,7 +28,7 @@ var offset_ydata = 0; //offset data in relation to other elements (e.g. backgrou
 DEFAULT_SYMMETRIC_SORT = 'No_sort';
 PREVIOUS_MATRIX_DATA_STATE = '';
 NUM_RETRY_BEFORE_DATA_LOADED = 0;
-VIDEO_LINKING = true;
+VIDEO_LINKING = false;
 VIDEO_IN_PLAY = false;
 TIMELINE_SLIDER_DISABLED = false;
 DAT_MODE = 0; // to filter datasets selected for metrics (default-0: "All Samples", 1: "selected Sample", 2: "selected Sample group")
@@ -39,6 +37,7 @@ LENSE_MODE = 0; // to filter fixation statistics (default-0: "Selected AOI Group
 let simulatedVideoTime = 0;
 var loaded = false; //for saved project image cropping
 SHOW_LENSLABEL = true;
+SHOW_GROUPLABEL = true;
 HAAR_VALUE = 0;
 SEQUENCE_SCORE_MISMATCH_PENALTY = 1;
 SEQUENCE_SCORE_GAP_PENALTY = 1;
@@ -46,13 +45,28 @@ SEQUENCE_SCORE_SKEW_PENALTY = 0.5;
 EXPORT_SPATIAL_CANVAS = true;
 EXPORT_CROP_SPATIAL_CANVAS = true;
 EXPORT_TIMELINE_CANVAS = true;
-EXPORT_METRIC_CANVAS = true;
+EXPORT_MATRIX_CANVAS = true;
+EXPORT_HISTOGRAM_CANVAS = true;
 EXPORT_CROP_TIMELINE_CANVAS = true;
 TOGGLE_GREEN_BOX_HIGHLIGHTS = true;
 let matrix_changed_retry = 0;
+let videoStartTimeChanged = false;
+
+var TIMELINE_HIGHLIGHT = {
+    tmin: null,
+    tmax: null,
+	fixs: null,
+};
 
 function display(bool){ if(bool){return 'block';}else{return 'none';} }
 function update_all(){ background_changed=true; midground_changed=true; matrix_changed=true; timeline_changed=true; update_topos=true; }
+
+//Used in index.html to define how to open help page entries for each section
+function openHelp(anchor){
+	var w = window.innerWidth * 0.8;
+	var h = window.innerHeight * 0.95;
+	window.open('help.html#'+anchor,'name','width='+w+',height='+h); 
+}
 
 var tooltip_css = ".tool:hover .tip {$} .tool2:hover .tip {$}";
 function toggle_tips(){
@@ -143,12 +157,14 @@ SHOW_FORE = "spatial"; TIME_DATA = "all";
 DO_BUNDLE = true; MATRIX_MINIMAP = false;
 CONTROL_STATE = "aoi"; SHOW_LENS = true; SHOW_NOTES = true; TIME_STRAT = 'real';
 MATRIX_WRITE = false; prev_count=0;
+let base_lenses = [];
+var hierarchyInputsInitialized = false;
 
 function load_controls(){
 	//data binding of AOI, TWI, Sample with DOM
 
 	// rebuild the lens list
-	order_lenses = []; lenses = []; LENSIDLIST = [];
+	order_lenses = []; lenses = []; LENSIDLIST = []; metric_lenses = [];
 	for(var i=0;i<document.getElementById('lenslist').children.length;i++){
 		v = parseInt( document.getElementById('lenslist').children[i].id.substring(5) );
 		LENSIDLIST[i] = v;
@@ -168,6 +184,7 @@ function load_controls(){
 		if(base_lenses[v].checked != document.getElementById('lens_'+v+'_c').checked) {
 			base_lenses[v].checked = document.getElementById('lens_'+v+'_c').checked;
 			update_metrics = true;
+			matrix_changed = true;
 		}
 		
 		base_lenses[v].locked = document.getElementById('lens_'+v+'_l').checked;
@@ -183,10 +200,14 @@ function load_controls(){
 			update_lens_colors();			
 		}
 
-		if(base_lenses[v].checked && base_lenses[v].included){
-			SHOW_LENS = true;
-			order_lenses.push( v );
-			lenses.push(base_lenses[ v ]);
+		if(base_lenses[v].included){
+			// Always include all lenses in metric_lenses for computation regardless of visibility
+			metric_lenses.push(base_lenses[v]);
+			if (base_lenses[v].checked){
+				SHOW_LENS = true;
+				order_lenses.push( v );
+				lenses.push(base_lenses[ v ]);
+			}
 		}
 	}
 	for(var i=0; i<base_lenses.length; i++){ base_lenses[i].included = ( document.getElementById('lens_'+i)!=undefined ); }
@@ -208,6 +229,12 @@ function load_controls(){
 		if(DATASETS[val] != undefined && DATASETS[val].included && DATASETS[val].tois != undefined && DATASETS[val].toi_id != -1 && 
 				DATASETS[val].tois[DATASETS[val].toi_id].included) {
 			DATASETS[val].tois[DATASETS[val].toi_id].range = slid_vals;
+			
+			if(TIME_STRAT == 'real' && DATASETS[val].tois[DATASETS[val].toi_id].real_range != undefined){
+				let t0r = DATASETS[val].t_start; let t1r = DATASETS[val].t_end;
+				DATASETS[val].tois[DATASETS[val].toi_id].real_range[0] = slid_vals[0] * (t1r - t0r) + t0r;
+				DATASETS[val].tois[DATASETS[val].toi_id].real_range[1] = slid_vals[1] * (t1r - t0r) + t0r;
+			}
 			if(DATASETS[val].slid_vals[0] != slid_vals[0] || DATASETS[val].slid_vals[1] != slid_vals[1]){
 				DATASETS[val].slid_vals = slid_vals;
 				compute_toi_metrics(val, DATASETS[val].toi_id);
@@ -417,43 +444,73 @@ function load_controls(){
 		FORE_SIZE = parseFloat(document.getElementById("fore_size_sl").noUiSlider.get());
 		foreground_changed = true; 
 	}
+  
+	let currentScrubbedTime = selectedTwiMinTime + (selectedTwiMaxTime - selectedTwiMinTime) * TIME_ANIMATE;
 	if( !TIMELINE_SLIDER_DISABLED && TIME_ANIMATE != parseFloat(document.getElementById("time_animate_sl").noUiSlider.get())){
 		TIME_ANIMATE = parseFloat(document.getElementById("time_animate_sl").noUiSlider.get());
-
+		let data = DATASETS[selected_data];
+		if (VIDEOS[selected_data] && VIDEOS[selected_data].coords) {
+			let video_coords_index = Math.floor(TIME_ANIMATE * (VIDEOS[selected_data].coords.length - 1));
+			currVidLens.move(VIDEOS[selected_data].coords[video_coords_index].x1, VIDEOS[selected_data].coords[video_coords_index].y1, VIDEOS[selected_data].coords[video_coords_index].x2, VIDEOS[selected_data].coords[video_coords_index].y2);
+		}
+		handleAOITimeChange(currentScrubbedTime, false);
 		//update video with the time
-		if(VIDEO_LINKING && selected_data != -1 && DATASETS[selected_data] != null && DATASETS[selected_data] != undefined && 
-			currentVideoObj != null && currentVideoObj != undefined) {
-				
-			//get time from dataset
-			let data = DATASETS[selected_data]; toi = data.tois[ data.toi_id ];
+		if(VIDEO_LINKING && selected_data != -1 && DATASETS[selected_data] != null && DATASETS[selected_data] != undefined &&
+			currentVideoObj != null && currentVideoObj != undefined && !TIME_PLAY) {
+			let data = DATASETS[selected_data];
+			let toi = null;
+			if (data.tois_id == -1) {
+				toi = data.tois[ data.toi_id ];
+			} else {
+				toi = data.tois[0];
+			}
 			let longest_duration = data.tmax - data.tmin;
 			let ts = 0;
-
-			if(lenses.length == 0){
-				for(let j = toi.j_min; j < toi.j_max && (data.fixs[j].t - data.tmin)/longest_duration < TIME_ANIMATE; j++){
-					if(data.fixs[j].t - data.tmin < 0)
+			if (lenses.length == 0) {
+				for (let j = toi.j_min; j < toi.j_max && (data.fixs[j].t - data.tmin)/longest_duration < TIME_ANIMATE; j++) {
+					if (data.fixs[j].t - data.tmin < 0)
 						ts = 0;
 					else
-						ts = (TimeLine.width*(data.fixs[j].t - data.tmin))/longest_duration;					
+						ts = (TimeLine.width * (data.fixs[j].t - data.tmin)) / longest_duration;
 				}
 			}
 			//set video time
 			VIDEOS[selected_data].videoobj.time((ts*VIDEOS[selected_data].videoobj.duration())/TimeLine.width);
 		}
 		background_changed = true; timeline_changed = true;
-	}else if( TIME_PLAY && TIME_ANIMATE < 1.0 ){
-		if(VIDEO_LINKING && selected_data != -1 && VIDEOS[selected_data] != null && VIDEOS[selected_data] != undefined && 
+	} else if( TIME_PLAY && TIME_ANIMATE < 1.0 ){
+		// If video is playing, we need to update the time animate slider proportionally to the video time
+		if(VIDEO_LINKING && selected_data != -1 && VIDEOS[selected_data] != null && VIDEOS[selected_data] != undefined &&
 			currentVideoObj != null && currentVideoObj != undefined) {
-			
-			TIME_ANIMATE = Math.min( 1.0, TIME_ANIMATE + 0.01/100 );
+				if (!videoStartTimeChanged) {
+					currentVideoObj.time(selectedTwiMinTime/1000);
+					videoStartTimeChanged = true;
+				} else {
+					if (currentVideoObj.time() >= selectedTwiMaxTime/1000) {
+						currentVideoObj.pause();
+						videoStartTimeChanged = false;
+					}
+				}
+			const t = currentVideoObj.time();
+			TIME_ANIMATE = (t - selectedTwiMinTime / 1000) / ((selectedTwiMaxTime - selectedTwiMinTime) / 1000);
 			document.getElementById("time_animate_sl").noUiSlider.set( TIME_ANIMATE );
+			if (VIDEOS[selected_data].coords) {
+				let video_coords_index = Math.floor(TIME_ANIMATE * (VIDEOS[selected_data].coords.length - 1));
+				currVidLens.move(VIDEOS[selected_data].coords[video_coords_index].x1, VIDEOS[selected_data].coords[video_coords_index].y1, VIDEOS[selected_data].coords[video_coords_index].x2, VIDEOS[selected_data].coords[video_coords_index].y2);
+			}
 		}
 		else {
 			TIME_ANIMATE = Math.min( 1.0, TIME_ANIMATE + 0.01 );
-			document.getElementById("time_animate_sl").noUiSlider.set( TIME_ANIMATE );		
+			document.getElementById("time_animate_sl").noUiSlider.set( TIME_ANIMATE );
+			if (VIDEOS[selected_data].coords) {
+				let video_coords_index = Math.floor(TIME_ANIMATE * (VIDEOS[selected_data].coords.length - 1));
+				currVidLens.move(VIDEOS[selected_data].coords[video_coords_index].x1, VIDEOS[selected_data].coords[video_coords_index].y1, VIDEOS[selected_data].coords[video_coords_index].x2, VIDEOS[selected_data].coords[video_coords_index].y2);
+			}
 		}
+		handleAOITimeChange(currentScrubbedTime, false);
 		background_changed = true; timeline_changed = true;
 	}
+	updateBookmarkButton(TIME_ANIMATE);
 	if( SACC_BRIGHT != parseFloat(document.getElementById("sacc_bright_sl").noUiSlider.get())){
 		SACC_BRIGHT = parseFloat(document.getElementById("sacc_bright_sl").noUiSlider.get());
 		midground_changed = SHOW_SACCADE;
@@ -531,7 +588,25 @@ function load_controls(){
 		if(e instanceof SyntaxError)
 			console.log(e);
 	}
+	if (!hierarchyInputsInitialized && base_lenses.length > 0) {
+        for (let i = 0; i < base_lenses.length; i++) {
+            setHierarchyInputs(base_lenses[i]);
+        }
+        hierarchyInputsInitialized = true;
+    }
 }
+
+
+function setHierarchyInputs(lens) {
+    const id = lens.id;
+    const screenInput = document.getElementById(`lens_${id}_screen_id`);
+    const appInput = document.getElementById(`lens_${id}_app_id`);
+    const interfaceInput = document.getElementById(`lens_${id}_interface_id`);
+    if (screenInput) screenInput.value = (lens.h1 === -1 || lens.h1 == null) ? '' : lens.h1;
+    if (appInput) appInput.value = (lens.h2 === -1 || lens.h2 == null) ? '' : lens.h2;
+    if (interfaceInput) interfaceInput.value = (lens.h3 === -1 || lens.h3 == null) ? '' : lens.h3;
+}
+
 // for changes to cropping from fields not mouse click
 function crop_resize(){
 	if(WIDTH != parseFloat(document.getElementById('WIDTH').value)){
@@ -860,6 +935,7 @@ function click_time_play(){
 	TIME_PLAY = document.getElementById('time_play').classList.value.includes('toggle-on');
 	background_changed = true;
 
+	/*
 	if (TIME_PLAY) {
 		TIMELINE_SLIDER_DISABLED = true;
 		document.getElementById("time_animate_sl").setAttribute('disabled', true);
@@ -867,7 +943,7 @@ function click_time_play(){
 	else {
 		TIMELINE_SLIDER_DISABLED = false;
 		document.getElementById("time_animate_sl").removeAttribute('disabled');
-	}
+	} */
 		
 		
 	if(TIME_PLAY && VIDEO_LINKING && selected_data != -1 && DATASETS[selected_data] != null && DATASETS[selected_data] != undefined && 
@@ -877,11 +953,12 @@ function click_time_play(){
 		VIDEOS[selected_data].videoobj.loop();
 		
 	}
+	
 	else if(!TIME_PLAY && VIDEO_LINKING && selected_data != -1 && VIDEOS[selected_data] != null && VIDEOS[selected_data] != undefined && 
 		currentVideoObj != null && currentVideoObj != undefined) {
 		VIDEOS[selected_data].videoobj.pause();
-		let timelinetime = TT(Math.floor(VIDEOS[selected_data].videoobj.time()*1000));
-		document.getElementById("time_animate_sl").noUiSlider.set( parseFloat(timelinetime/TimeLine.width).toFixed(2) );
+		//let timelinetime = TT(Math.floor(VIDEOS[selected_data].videoobj.time()*1000));
+		//document.getElementById("time_animate_sl").noUiSlider.set( parseFloat(timelinetime/TimeLine.width).toFixed(2) );
 	}
 }
 function click_size(){
@@ -910,6 +987,8 @@ function click_showlens(){
 				document.getElementById('lens_'+i+'_c').checked=true;
 			}			
 		}
+		selectedFilter = document.getElementById('aoiFilterSelect').value;
+		handleAOIFilterChange(selectedFilter);
 	}else{
 		document.getElementById('showlens').innerHTML = " <i class='fas fa-eye-slash'></i> ";
 		for(var i=0; i<base_lenses.length; i++){
@@ -919,16 +998,24 @@ function click_showlens(){
 			}			
 		}
 	}
+	matrix_changed = true; //  foreground_changed = true;
 }
 function click_showlabel(){
 	document.getElementById('show_lenslabel').classList.toggle( 'toggle-on' );
 	SHOW_LENSLABEL = document.getElementById('show_lenslabel').classList.value.includes('toggle-on');
 	foreground_changed = true;
 }
+function click_showgrouplabel(){
+	document.getElementById('show_grouplabel').classList.toggle( 'toggle-on' );
+	SHOW_GROUPLABEL = document.getElementById('show_grouplabel').classList.value.includes('toggle-on');
+	foreground_changed = true;
+}
 function click_showtwis(){
 	document.getElementById('showtwis').classList.add( 'toggle-on' );
 	var hidden = document.getElementById('showtwis').innerHTML.includes("slash");
 	if( hidden ){
+		draw_time_all(TimeLine);
+		select_twi(0)
 		document.getElementById('showtwis').innerHTML = " <i class='fas fa-eye'></i>  ";
 		for(var i=0; i<base_twis.length; i++){
 			if(base_twis[i].included) {
@@ -937,6 +1024,7 @@ function click_showtwis(){
 			}			
 		}
 	}else{
+		removeAllBookmarkButtons();
 		document.getElementById('showtwis').innerHTML = " <i class='fas fa-eye-slash'></i> ";
 		for(var i=0; i<base_twis.length; i++){
 			if(base_twis[i].included) {
@@ -952,8 +1040,15 @@ function not_all_eye(id){
 }
 function click_notes(){
 	SHOW_NOTES = document.getElementById('notes').innerHTML.includes( "slash" );
-	if( SHOW_NOTES ){document.getElementById('notes').innerHTML = " <i class='fas fa-eye'></i> "}
-	else{document.getElementById('notes').innerHTML = " <i class='fas fa-eye-slash'></i> "}
+	if( SHOW_NOTES ) {
+		document.getElementById('notes').innerHTML = " <i class='fas fa-eye'></i> ";
+		document.getElementById('notes').classList.remove("toggle-off");
+		document.getElementById('notes').classList.add('toggle-on');
+	} else {
+		document.getElementById('notes').innerHTML = " <i class='fas fa-eye-slash'></i> ";
+		document.getElementById('notes').classList.remove("toggle-on");
+		document.getElementById('notes').classList.add('toggle-off');
+	}
 }
 function control_state(val){
 	if( CONTROL_STATE == val ){ CONTROL_STATE = ""; }
@@ -1162,6 +1257,8 @@ function reorder_matrix(sort_type){
 	if(sort_type != 'No_sort'){sort_selected_name = '';}
 	else
 		return;
+	if(matrix_values.length < 2 || matrix_values[0].length < 2){
+		return; }
 	var perm = [], row_perm = [], col_perm = [];
 	if(sort_type == 'optimal_leaf_order'){
 		var transpose = reorder.transpose(matrix_values),
@@ -1662,7 +1759,7 @@ function export_matrix(){
 	download_string(matrix_string, matrix_filename);
 }
 
-function export_spatial_canvas(){
+function export_enabled_canvas(){
 	if(EXPORT_SPATIAL_CANVAS && EXPORT_CROP_SPATIAL_CANVAS)
 		SPATIAL.save(SpatialCanvas.get(ground_x, ground_y, cropimage.width, cropimage.height), "spatial.jpg");
 	else if(EXPORT_SPATIAL_CANVAS && !EXPORT_CROP_SPATIAL_CANVAS)
@@ -1673,8 +1770,45 @@ function export_spatial_canvas(){
 	else if(EXPORT_TIMELINE_CANVAS && !EXPORT_CROP_TIMELINE_CANVAS)
 		TIMELINE.save(TIMELINE_CANVAS, "timelines.jpg");
 
-	if(EXPORT_METRIC_CANVAS)
-		MATRIX.save(matrixCanvas1, "metrics.jpg");
+	if(EXPORT_MATRIX_CANVAS && mat_type == 'mat' && VALUED.length > 0 && order_twis.length > 0)
+		MATRIX.save(matrixCanvas1, "matrix.jpg");
+	if(EXPORT_HISTOGRAM_CANVAS && mat_type == 'hist' && VALUED.length > 0 && order_twis.length > 0)
+		MATRIX.save(matrixCanvas1, "histogram.jpg");
+}
+
+function exportCombinedCanvas() {
+	console.log(typeof html2canvas);
+
+    const parentElement = document.getElementById("pj2");
+
+	console.log(parentElement);
+    if (!parentElement) {
+        console.error("Element not found: #defaultCanvas1");
+        return;
+    }
+
+	const rect = parentElement.getBoundingClientRect();
+	console.log("Element dimensions:", rect);
+	if (rect.width === 0 || rect.height === 0) {
+		console.error("Element is not visible or has zero dimensions.");
+		return;
+	}
+
+
+	html2canvas(parentElement.childNodes[0].children, { logging: true })
+    .then((canvas) => {
+        console.log("@@@@@@@@@@@@@@@@@@@@@@@");
+        const link = document.createElement("a");
+        link.download = "timeline_with_bookmarks.jpg";
+        link.href = canvas.toDataURL("image/jpeg");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    })
+    .catch((error) => {
+        console.error("Error during html2canvas execution:", error);
+    });
+
 }
 
 function export_metrics(){
